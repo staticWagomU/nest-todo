@@ -135,6 +135,9 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+      valibot:
+        specifier: 1.0.0-beta.10
+        version: 1.0.0-beta.10(typescript@5.7.2)
     devDependencies:
       '@remix-run/dev':
         specifier: ^2.15.0
@@ -5046,6 +5049,14 @@ packages:
 
   valibot@0.41.0:
     resolution: {integrity: sha512-igDBb8CTYr8YTQlOKgaN9nSS0Be7z+WRuaeYqGf3Cjz3aKmSnqEmYnkfVjzIuumGqfHpa3fLIvMEAfhrpqN8ng==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  valibot@1.0.0-beta.10:
+    resolution: {integrity: sha512-nmo3nxvXRrxwDYZznK3aTgYv7ZA/SUZJ/s+pLY4Tqsex/fgwZ9XrrQ14jjozjUaeduQ9PhXHE2Xx1uMb0HePYw==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -11117,6 +11128,10 @@ snapshots:
       convert-source-map: 2.0.0
 
   valibot@0.41.0(typescript@5.7.2):
+    optionalDependencies:
+      typescript: 5.7.2
+
+  valibot@1.0.0-beta.10(typescript@5.7.2):
     optionalDependencies:
       typescript: 5.7.2
 
