@@ -5,7 +5,7 @@ import { TodoLoader } from "./loader";
 export let loader = TodoLoader;
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
+    { title: "NestJs+TypeORM+Supabase+RemixでTODOアプリ" },
     { name: "description", content: "Welcome to Remix!" },
   ];
 };
