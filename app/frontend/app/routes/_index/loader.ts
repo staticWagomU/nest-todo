@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-const TodoSchema = v.array(
+export const TodoSchema = v.array(
   v.object({
     id: v.pipe(v.string(), v.uuid()),
     title: v.string(),
@@ -9,18 +9,19 @@ const TodoSchema = v.array(
   })
 );
 
-export const TodoLoader = async () => {
+export type Todo = v.Output<typeof TodoSchema>[number];
+export type Todos = v.Output<typeof TodoSchema>;
+
+export const fetchTodos = async (): Promise<Todos> => {
   const res = await fetch('http://localhost:3000/todos');
   if (!res.ok) {
-    throw new Response(null, { status: 404 });
+    throw new Error('Failed to fetch todos');
   }
   const data = await res.json();
   try {
     const validData = v.parse(TodoSchema, data);
     return validData;
-  }catch(e) {
-    throw new Response(null, { status: 500 });
+  } catch(e) {
+    throw new Error('Invalid data format');
   }
 };
-
-export type TodoLoader = typeof TodoLoader;
