@@ -13,7 +13,7 @@ export type Todo = v.Output<typeof TodoSchema>[number];
 export type Todos = v.Output<typeof TodoSchema>;
 
 export const fetchTodos = async (): Promise<Todos> => {
-  const res = await fetch('http://localhost:3000/todos');
+  const res = await fetch('/api/todos');
   if (!res.ok) {
     throw new Error('Failed to fetch todos');
   }
