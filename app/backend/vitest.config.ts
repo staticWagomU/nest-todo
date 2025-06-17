@@ -11,6 +11,8 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       exclude: ['node_modules/', 'dist/', 'coverage/', '**/*.d.ts', '**/*.spec.ts', '**/*.test.ts'],
     },
-    setupFiles: [],
+    setupFiles: ['./vitest.setup.ts'],
+    clearMocks: true,
+    restoreMocks: true,
   },
 });
