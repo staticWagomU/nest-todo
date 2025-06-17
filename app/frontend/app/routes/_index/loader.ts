@@ -1,4 +1,4 @@
-import * as v from "valibot";
+import * as v from 'valibot';
 
 export const TodoSchema = v.array(
   v.object({
@@ -18,16 +18,16 @@ export const fetchTodos = async (): Promise<Todos> => {
     const res = await fetch('/api/todos');
     console.log('Response status:', res.status);
     console.log('Response headers:', Object.fromEntries(res.headers.entries()));
-    
+
     if (!res.ok) {
       const errorText = await res.text();
       console.error('API Error:', errorText);
       throw new Error(`Failed to fetch todos: ${res.status} ${res.statusText}`);
     }
-    
+
     const data = await res.json();
     console.log('Received data:', data);
-    
+
     const validData = v.parse(TodoSchema, data);
     return validData;
   } catch (error) {

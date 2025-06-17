@@ -19,8 +19,8 @@ export default defineConfig({
         'coverage/',
         '**/*.d.ts',
         '**/*.config.{ts,js}',
-        'app/test/setup.ts'
-      ]
-    }
-  }
+        'app/test/setup.ts',
+      ],
+    },
+  },
 });

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { fetchTodos, type Todos } from "./loader";
+import { useState, useEffect } from 'react';
+import { fetchTodos, type Todos } from './loader';
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todos>([]);
@@ -33,14 +33,11 @@ export default function TodoPage() {
     <>
       <h1 className="text-3xl font-bold mb-4">Todos</h1>
       <ul className="list-disc pl-5">
-        {todos.map(todo => (
-          <li 
-            key={todo.id} 
-            className="flex items-center gap-2 bg-gray-100 p-2 mb-2 rounded shadow"
-          >
-            <input 
-              type="checkbox" 
-              checked={todo.completed} 
+        {todos.map((todo) => (
+          <li key={todo.id} className="flex items-center gap-2 bg-gray-100 p-2 mb-2 rounded shadow">
+            <input
+              type="checkbox"
+              checked={todo.completed}
               className="form-checkbox h-5 w-5 text-blue-600"
               readOnly
             />
