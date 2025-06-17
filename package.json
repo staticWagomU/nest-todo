@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:dev": "turbo start:dev",
-    "build": "turbo build"
+    "build": "turbo build",
+    "lint": "biome lint --write .",
+    "format": "biome format --write ."
   },
   "packageManager": "pnpm@9.12.0",
   "engines": {
@@ -19,6 +21,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "turbo": "^2.3.3"
   }
 }
