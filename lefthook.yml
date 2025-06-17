@@ -1,0 +1,22 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: backend lint and format
+      root: "app/backend/"
+      glob: "*.{js,ts}"
+      run: pnpm lint && pnpm format
+
+    - name: frontend lint
+      root: "app/frontend/"
+      glob: "*.{js,ts,jsx,tsx}"
+      run: pnpm lint && pnpm typecheck
+
+pre-push:
+  jobs:
+    - name: backend tests
+      root: "app/backend/"
+      run: pnpm test
+
+    - name: frontend tests
+      root: "app/frontend/"
+      run: pnpm test
