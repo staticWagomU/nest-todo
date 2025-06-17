@@ -13,15 +13,28 @@ export type Todo = v.Output<typeof TodoSchema>[number];
 export type Todos = v.Output<typeof TodoSchema>;
 
 export const fetchTodos = async (): Promise<Todos> => {
-  const res = await fetch('/api/todos');
-  if (!res.ok) {
-    throw new Error('Failed to fetch todos');
-  }
-  const data = await res.json();
   try {
+    console.log('Fetching todos from /api/todos...');
+    const res = await fetch('/api/todos');
+    console.log('Response status:', res.status);
+    console.log('Response headers:', Object.fromEntries(res.headers.entries()));
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('API Error:', errorText);
+      throw new Error(`Failed to fetch todos: ${res.status} ${res.statusText}`);
+    }
+    
+    const data = await res.json();
+    console.log('Received data:', data);
+    
     const validData = v.parse(TodoSchema, data);
     return validData;
-  } catch(e) {
-    throw new Error('Invalid data format');
+  } catch (error) {
+    console.error('Fetch error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Unknown error occurred while fetching todos');
   }
 };

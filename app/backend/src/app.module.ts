@@ -13,9 +13,12 @@ import { Todo } from './todos/entities/todo.entity';
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: process.env.DATABASE_URL,
+      url: process.env.DATABASE_URL || 'postgresql://localhost:5432/todo_db',
       entities: [Todo],
       synchronize: process.env.NODE_ENV !== 'production',
+      logging: true,
+      retryAttempts: 3,
+      retryDelay: 3000,
     }),
     TodosModule,
   ],
