@@ -8,11 +8,13 @@
   "scripts": {
     "build": "nest build",
     "format": "biome format --write .",
+    "format:check": "biome format .",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "biome lint --write .",
+    "lint:check": "biome lint .",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:cov": "vitest --coverage",
