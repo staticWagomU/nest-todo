@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-// test comment
 import {
   Title,
   Text,
