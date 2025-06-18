@@ -9,8 +9,8 @@ export const TodoSchema = v.array(
   })
 );
 
-export type Todo = v.Output<typeof TodoSchema>[number];
-export type Todos = v.Output<typeof TodoSchema>;
+export type Todo = v.InferOutput<typeof TodoSchema>[number];
+export type Todos = v.InferOutput<typeof TodoSchema>;
 
 export const fetchTodos = async (): Promise<Todos> => {
   try {

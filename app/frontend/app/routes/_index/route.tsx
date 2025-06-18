@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { fetchTodos, type Todos } from './loader';
+import { Title, Text, Card, Checkbox, Stack, Loader, Alert } from '@mantine/core';
+import { IconAlertCircle } from '@tabler/icons-react';
+import { fetchTodos, type Todos, type Todo } from './loader';
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todos>([]);
@@ -22,31 +24,43 @@ export default function TodoPage() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <Loader size="lg" />;
   }
 
   if (error) {
-    return <div className="text-red-500">Error: {error}</div>;
+    return (
+      <Alert variant="light" color="red" title="Error" icon={<IconAlertCircle />}>
+        {error}
+      </Alert>
+    );
   }
 
   return (
-    <>
-      <h1 className="text-3xl font-bold mb-4">Todos</h1>
-      <ul className="list-disc pl-5">
-        {todos.map((todo) => (
-          <li key={todo.id} className="flex items-center gap-2 bg-gray-100 p-2 mb-2 rounded shadow">
-            <input
-              type="checkbox"
+    <Stack gap="md">
+      <Title order={1}>Todos</Title>
+      <Stack gap="sm">
+        {todos.map((todo: Todo) => (
+          <Card key={todo.id} shadow="sm" padding="md" radius="md" withBorder>
+            <Checkbox
               checked={todo.completed}
-              className="form-checkbox h-5 w-5 text-blue-600"
+              label={
+                <Text
+                  td={todo.completed ? 'line-through' : 'none'}
+                  c={todo.completed ? 'dimmed' : 'inherit'}
+                >
+                  {todo.title}
+                </Text>
+              }
               readOnly
             />
-            <span className={`flex-1 ${todo.completed ? 'line-through text-gray-500' : ''}`}>
-              {todo.title}
-            </span>
-          </li>
+            {todo.description && (
+              <Text size="sm" c="dimmed" mt="xs">
+                {todo.description}
+              </Text>
+            )}
+          </Card>
         ))}
-      </ul>
-    </>
+      </Stack>
+    </Stack>
   );
 }
