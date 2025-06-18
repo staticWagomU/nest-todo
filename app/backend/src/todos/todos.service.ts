@@ -17,21 +17,19 @@ export class TodosService {
    * 登録
    * @param createTodoDto
    */
-  async create(createTodoDto: CreateTodoDto): Promise<{ message: string }> {
-    await this.todoRepository
+  async create(createTodoDto: CreateTodoDto): Promise<Todo> {
+    const newTodo = await this.todoRepository
       .save({
         id: randomUUID({ disableEntropyCache: true }),
         title: createTodoDto.title,
-        description: createTodoDto.description,
-        completed: false,
+        description: createTodoDto.description || '',
+        completed: createTodoDto.completed || false,
       })
       .catch((error) => {
         throw new InternalServerErrorException(`[${error.message}]ユーザー登録に失敗しました。`);
       });
 
-    return {
-      message: 'ユーザー登録に成功しました。',
-    };
+    return newTodo;
   }
 
   async findAll(): Promise<Todo[]> {

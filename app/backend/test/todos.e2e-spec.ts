@@ -1,7 +1,8 @@
 import type { INestApplication } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import * as request from 'supertest';
+import request from 'supertest';
 import type { Repository } from 'typeorm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppModule } from '../src/app.module';
@@ -18,6 +19,13 @@ describe('TodosController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api/v1');
+    
+    // Add global ValidationPipe to match production configuration
+    app.useGlobalPipes(new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }));
     
     todoRepository = moduleFixture.get<Repository<Todo>>(getRepositoryToken(Todo));
     
@@ -68,7 +76,6 @@ describe('TodosController (e2e)', () => {
 
     it('should return todos after creating them', async () => {
       const todo = await todoRepository.save({
-        id: '1',
         title: 'Test Todo',
         description: 'Test Description',
         completed: false,
@@ -91,7 +98,6 @@ describe('TodosController (e2e)', () => {
   describe('/api/v1/todos/:id (GET)', () => {
     it('should return a specific todo', async () => {
       const todo = await todoRepository.save({
-        id: '1',
         title: 'Test Todo',
         description: 'Test Description',
         completed: false,
@@ -111,7 +117,7 @@ describe('TodosController (e2e)', () => {
 
     it('should return 404 for non-existent todo', () => {
       return request(app.getHttpServer())
-        .get('/api/v1/todos/non-existent-id')
+        .get('/api/v1/todos/123e4567-e89b-12d3-a456-426614174000')
         .expect(404);
     });
   });
@@ -119,7 +125,6 @@ describe('TodosController (e2e)', () => {
   describe('/api/v1/todos/:id (PATCH)', () => {
     it('should update a todo', async () => {
       const todo = await todoRepository.save({
-        id: '1',
         title: 'Test Todo',
         description: 'Test Description',
         completed: false,
@@ -143,7 +148,6 @@ describe('TodosController (e2e)', () => {
   describe('/api/v1/todos/:id (DELETE)', () => {
     it('should delete a todo', async () => {
       const todo = await todoRepository.save({
-        id: '1',
         title: 'Test Todo',
         description: 'Test Description',
         completed: false,

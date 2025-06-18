@@ -1,13 +1,17 @@
-import { IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, MinLength, IsString, IsBoolean } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateTodoDto {
   @IsNotEmpty({ message: 'タイトルは必須です' })
+  @IsString()
   @MinLength(3, { message: 'タイトルは3文字以上で入力してください' })
   title: string;
 
   @IsOptional()
-  description: string;
+  @IsString()
+  description?: string;
 
   @IsOptional()
-  completed: boolean;
+  @IsBoolean()
+  completed?: boolean;
 }
