@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a monorepo containing a full-stack todo application with:
 - **Backend**: NestJS REST API with TypeORM and PostgreSQL (`app/backend/`)
-- **Frontend**: React with React Router, Vite, and Tailwind CSS (`app/frontend/`)
+- **Frontend**: React with React Router, Vite, and Mantine UI (`app/frontend/`)
 - **Package Manager**: pnpm with Turbo for build orchestration
 - **Database**: PostgreSQL with TypeORM entities
 
@@ -15,6 +15,8 @@ This is a monorepo containing a full-stack todo application with:
 ### Root Level
 - `pnpm start:dev` - Start both frontend and backend in development mode
 - `pnpm build` - Build both applications
+- `pnpm lint` - Run Biome linting across the entire monorepo
+- `pnpm format` - Format code with Biome across the entire monorepo
 
 ### Backend (`app/backend/`)
 - `pnpm start:dev` - Start NestJS in watch mode
@@ -23,14 +25,14 @@ This is a monorepo containing a full-stack todo application with:
 - `pnpm test:watch` - Run unit tests in watch mode
 - `pnpm test:e2e` - Run end-to-end tests with Vitest
 - `pnpm test:cov` - Run tests with coverage
-- `pnpm lint` - Run ESLint with auto-fix
-- `pnpm format` - Format code with Prettier
+- `pnpm lint` - Run Biome linting with auto-fix
+- `pnpm format` - Format code with Biome
 
 ### Frontend (`app/frontend/`)
 - `pnpm start:dev` - Start Vite dev server
 - `pnpm build` - Build for production
 - `pnpm typecheck` - Run TypeScript type checking
-- `pnpm lint` - Run ESLint
+- `pnpm lint` - Run Biome linting
 - `pnpm test` - Run unit tests with Vitest
 - `pnpm test:watch` - Run unit tests in watch mode
 - `pnpm test:cov` - Run tests with coverage
@@ -40,14 +42,18 @@ This is a monorepo containing a full-stack todo application with:
 ### Backend Architecture
 - **Entry Point**: `src/main.ts` - Bootstrap NestJS app on port 3000 with global prefix `/api/v1`
 - **Database**: PostgreSQL with TypeORM, configured via `DATABASE_URL` environment variable
+- **CORS**: Configured for localhost:5173 (frontend development server)
 - **Todos Module**: Complete CRUD operations for Todo entities
 - **Entity**: `Todo` with UUID primary key, title, description, and completed status
 - **API Endpoints**: RESTful endpoints accessible at `http://localhost:3000/api/v1/todos`
+- **Validation**: Global ValidationPipe with whitelist and transform enabled
 
 ### Frontend Architecture
 - **Framework**: React 18 with React Router (migrated from Remix)
-- **Styling**: Tailwind CSS with PostCSS
-- **Data Fetching**: Custom loader functions with Valibot validation
+- **UI Library**: Mantine UI components with hooks (@mantine/hooks, @mantine/form)
+- **Styling**: Mantine theme system (replaced Tailwind CSS)
+- **Data Fetching**: Custom async functions with Valibot validation
+- **State Management**: React useState/useEffect for local state
 - **Proxy**: Vite dev server proxies `/api` requests to backend at `localhost:3000/api/v1`
 - **Build Tool**: Vite with React plugin and TypeScript paths
 
@@ -74,9 +80,11 @@ This is a monorepo containing a full-stack todo application with:
 
 ## Code Style
 
+- **Linting/Formatting**: Biome (replaces ESLint/Prettier) with root configuration in `biome.json`
+- **Git Hooks**: Lefthook manages pre-commit (lint/format/typecheck) and pre-push (tests) hooks
 - **TypeScript**: Strict mode enabled across both applications
-- **Backend**: NestJS conventions with decorators, dependency injection
-- **Frontend**: Functional React components with hooks, Valibot for validation
+- **Backend**: NestJS conventions with decorators, dependency injection, manual validation in controllers
+- **Frontend**: Functional React components with hooks, Valibot for schema validation, Mantine forms
 - **Database**: TypeORM entities with proper column decorators and comments in Japanese
 - **Imports**: External packages first, then relative imports
 - **Error Handling**: Proper HTTP status codes and error boundaries
