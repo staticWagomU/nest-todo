@@ -1,5 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Title, Text, Card, Checkbox, Stack, Loader, Alert, Button, Modal, TextInput, Textarea, Group } from '@mantine/core';
+import {
+  Title,
+  Text,
+  Card,
+  Checkbox,
+  Stack,
+  Loader,
+  Alert,
+  Button,
+  Modal,
+  TextInput,
+  Textarea,
+  Group,
+} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react';
@@ -7,7 +20,7 @@ import { fetchTodos, createTodo, type Todos, type Todo, type CreateTodoRequest }
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todos>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [opened, { open, close }] = useDisclosure(false);
@@ -20,18 +33,19 @@ export default function TodoPage() {
       completed: false,
     },
     validate: {
-      title: (value) => value.trim().length < 3 ? 'タイトルは3文字以上で入力してください' : null,
+      title: (value) => (value.trim().length < 3 ? 'タイトルは3文字以上で入力してください' : null),
     },
   });
 
   useEffect(() => {
     const loadTodos = async () => {
+      setLoading(true);
       try {
         const data = await fetchTodos();
         setTodos(data);
-        setLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
         setLoading(false);
       }
     };
@@ -42,30 +56,17 @@ export default function TodoPage() {
   const handleSubmit = async (values: CreateTodoRequest) => {
     setSubmitting(true);
     try {
-      await createTodo(values);
+      const newTodo = await createTodo(values);
       form.reset();
       close();
-      // Refresh todos list
-      const data = await fetchTodos();
-      setTodos(data);
+      // Add new todo to existing list instead of refetching all data
+      setTodos((prev) => [...prev, newTodo]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create todo');
     } finally {
       setSubmitting(false);
     }
   };
-
-  if (loading) {
-    return <Loader size="lg" />;
-  }
-
-  if (error) {
-    return (
-      <Alert variant="light" color="red" title="Error" icon={<IconAlertCircle />}>
-        {error}
-      </Alert>
-    );
-  }
 
   return (
     <>
@@ -77,41 +78,59 @@ export default function TodoPage() {
             onClick={open}
             variant="filled"
             color="blue"
+            disabled={loading}
           >
             Todo を追加
           </Button>
         </Group>
-        <Stack gap="sm">
-          {todos.map((todo: Todo) => (
-            <Card key={todo.id} shadow="sm" padding="md" radius="md" withBorder>
-              <Checkbox
-                checked={todo.completed}
-                label={
-                  <Text
-                    td={todo.completed ? 'line-through' : 'none'}
-                    c={todo.completed ? 'dimmed' : 'inherit'}
-                  >
-                    {todo.title}
-                  </Text>
-                }
-                readOnly
-              />
-              {todo.description && (
-                <Text size="sm" c="dimmed" mt="xs">
-                  {todo.description}
+
+        {error && (
+          <Alert variant="light" color="red" title="Error" icon={<IconAlertCircle />}>
+            {error}
+          </Alert>
+        )}
+
+        {loading ? (
+          <Group justify="center" py="xl">
+            <Loader size="md" />
+            <Text>Loading todos...</Text>
+          </Group>
+        ) : (
+          <Stack gap="sm">
+            {todos.length === 0 ? (
+              <Card shadow="sm" padding="md" radius="md" withBorder>
+                <Text ta="center" c="dimmed">
+                  まだTodoがありません。新しいTodoを追加してみましょう！
                 </Text>
-              )}
-            </Card>
-          ))}
-        </Stack>
+              </Card>
+            ) : (
+              todos.map((todo: Todo) => (
+                <Card key={todo.id} shadow="sm" padding="md" radius="md" withBorder>
+                  <Checkbox
+                    checked={todo.completed}
+                    label={
+                      <Text
+                        td={todo.completed ? 'line-through' : 'none'}
+                        c={todo.completed ? 'dimmed' : 'inherit'}
+                      >
+                        {todo.title}
+                      </Text>
+                    }
+                    readOnly
+                  />
+                  {todo.description && (
+                    <Text size="sm" c="dimmed" mt="xs">
+                      {todo.description}
+                    </Text>
+                  )}
+                </Card>
+              ))
+            )}
+          </Stack>
+        )}
       </Stack>
 
-      <Modal
-        opened={opened}
-        onClose={close}
-        title="新しいTodoを追加"
-        size="md"
-      >
+      <Modal opened={opened} onClose={close} title="新しいTodoを追加" size="md">
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap="md">
             <TextInput
@@ -129,18 +148,10 @@ export default function TodoPage() {
               {...form.getInputProps('description')}
             />
             <Group justify="flex-end" gap="sm">
-              <Button
-                variant="default"
-                onClick={close}
-                disabled={submitting}
-              >
+              <Button variant="default" onClick={close} disabled={submitting}>
                 キャンセル
               </Button>
-              <Button
-                type="submit"
-                loading={submitting}
-                color="blue"
-              >
+              <Button type="submit" loading={submitting} color="blue">
                 追加
               </Button>
             </Group>
