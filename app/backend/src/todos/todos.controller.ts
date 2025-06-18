@@ -8,7 +8,7 @@ import {
   Delete,
   BadRequestException,
 } from '@nestjs/common';
-import { TodosService } from './todos.service';
+import type { TodosService } from './todos.service';
 import type { CreateTodoDto } from './dto/create-todo.dto';
 import type { UpdateTodoDto } from './dto/update-todo.dto';
 
@@ -17,7 +17,7 @@ export class TodosController {
   constructor(private readonly todosService: TodosService) {}
 
   @Post()
-  create(@Body() body: any) {
+  create(@Body() body: unknown) {
     // 手動でバリデーション
     if (!body || typeof body !== 'object') {
       throw new BadRequestException('リクエストボディが必要です');
@@ -48,7 +48,30 @@ export class TodosController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTodoDto: UpdateTodoDto) {
+  update(@Param('id') id: string, @Body() body: unknown) {
+    // 手動でバリデーション
+    if (!body || typeof body !== 'object') {
+      throw new BadRequestException('リクエストボディが必要です');
+    }
+
+    // DTOオブジェクトを手動作成
+    const updateTodoDto: UpdateTodoDto = {};
+
+    if (body.title !== undefined) {
+      if (typeof body.title !== 'string' || body.title.trim().length < 3) {
+        throw new BadRequestException('タイトルは3文字以上で入力してください');
+      }
+      updateTodoDto.title = body.title.trim();
+    }
+
+    if (body.description !== undefined) {
+      updateTodoDto.description = body.description;
+    }
+
+    if (body.completed !== undefined) {
+      updateTodoDto.completed = body.completed;
+    }
+
     return this.todosService.update(id, updateTodoDto);
   }
 

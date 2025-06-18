@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import {
   Title,
   Text,
@@ -15,14 +15,23 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react';
-import { fetchTodos, createTodo, type Todos, type Todo, type CreateTodoRequest } from './loader';
+import {
+  fetchTodos,
+  createTodo,
+  updateTodo,
+  type Todos,
+  type Todo,
+  type CreateTodoRequest,
+} from './loader';
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todos>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [updatingTodos, setUpdatingTodos] = useState<Set<string>>(new Set());
   const [opened, { open, close }] = useDisclosure(false);
 
   const form = useForm<CreateTodoRequest>({
@@ -68,6 +77,34 @@ export default function TodoPage() {
     }
   };
 
+  const handleToggleCompleted = async (id: string, completed: boolean) => {
+    // Add to updating set
+    setUpdatingTodos((prev) => new Set(prev).add(id));
+
+    try {
+      const updatedTodo = await updateTodo(id, { completed });
+
+      // Update the todo in the list
+      setTodos((prev) => prev.map((todo) => (todo.id === id ? updatedTodo : todo)));
+    } catch (err) {
+      // Show error toast
+      notifications.show({
+        title: 'エラー',
+        message: 'Todoの更新に失敗しました',
+        color: 'red',
+      });
+
+      console.error('Failed to update todo:', err);
+    } finally {
+      // Remove from updating set
+      setUpdatingTodos((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
+
   return (
     <>
       <Stack gap="md">
@@ -104,27 +141,38 @@ export default function TodoPage() {
                 </Text>
               </Card>
             ) : (
-              todos.map((todo: Todo) => (
-                <Card key={todo.id} shadow="sm" padding="md" radius="md" withBorder>
-                  <Checkbox
-                    checked={todo.completed}
-                    label={
-                      <Text
-                        td={todo.completed ? 'line-through' : 'none'}
-                        c={todo.completed ? 'dimmed' : 'inherit'}
-                      >
-                        {todo.title}
+              todos.map((todo: Todo) => {
+                const isUpdating = updatingTodos.has(todo.id);
+                return (
+                  <Card key={todo.id} shadow="sm" padding="md" radius="md" withBorder>
+                    <Suspense fallback={<Loader size="sm" />}>
+                      <Group>
+                        <Checkbox
+                          checked={todo.completed}
+                          onChange={(event) =>
+                            handleToggleCompleted(todo.id, event.currentTarget.checked)
+                          }
+                          disabled={isUpdating}
+                          label={
+                            <Text
+                              td={todo.completed ? 'line-through' : 'none'}
+                              c={todo.completed ? 'dimmed' : 'inherit'}
+                            >
+                              {todo.title}
+                            </Text>
+                          }
+                        />
+                        {isUpdating && <Loader size="xs" />}
+                      </Group>
+                    </Suspense>
+                    {todo.description && (
+                      <Text size="sm" c="dimmed" mt="xs">
+                        {todo.description}
                       </Text>
-                    }
-                    readOnly
-                  />
-                  {todo.description && (
-                    <Text size="sm" c="dimmed" mt="xs">
-                      {todo.description}
-                    </Text>
-                  )}
-                </Card>
-              ))
+                    )}
+                  </Card>
+                );
+              })
             )}
           </Stack>
         )}

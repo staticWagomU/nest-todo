@@ -42,7 +42,7 @@ export class TodosService {
     });
   }
 
-  async update(id: string, updateTodoDto: UpdateTodoDto): Promise<{ message: string }> {
+  async update(id: string, updateTodoDto: UpdateTodoDto): Promise<Todo> {
     await this.todoRepository
       .update(id, {
         title: updateTodoDto.title,
@@ -55,9 +55,7 @@ export class TodosService {
         );
       });
 
-    return {
-      message: `ユーザーID「${id}」の更新に成功しました。`,
-    };
+    return this.findOne(id);
   }
 
   async remove(id: string) {

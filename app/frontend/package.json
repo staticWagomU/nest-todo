@@ -18,8 +18,9 @@
   },
   "dependencies": {
     "@mantine/core": "^7.17.6",
-    "@mantine/hooks": "^7.17.6",
     "@mantine/form": "^7.17.6",
+    "@mantine/hooks": "^7.17.6",
+    "@mantine/notifications": "^8.1.1",
     "@tabler/icons-react": "^3.0.0",
     "isbot": "^4.1.0",
     "react": "^18.2.0",
@@ -28,19 +29,19 @@
     "valibot": "1.0.0-beta.10"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/coverage-v8": "^2.0.0",
     "autoprefixer": "^10.4.19",
+    "jsdom": "^25.0.0",
     "postcss": "^8.4.38",
     "typescript": "^5.1.6",
     "vite": "^5.1.0",
     "vite-tsconfig-paths": "^4.2.1",
-    "vitest": "^2.0.0",
-    "@vitest/coverage-v8": "^2.0.0",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/jest-dom": "^6.0.0",
-    "jsdom": "^25.0.0"
+    "vitest": "^2.0.0"
   },
   "engines": {
     "node": ">=20.0.0"
