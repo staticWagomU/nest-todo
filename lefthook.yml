@@ -3,12 +3,12 @@ pre-commit:
   jobs:
     - name: backend lint and format
       root: "app/backend/"
-      glob: "*.{js,ts}"
+      glob: "**/*.{js,ts}"
       run: pnpm lint:check && pnpm format:check
 
     - name: frontend lint
       root: "app/frontend/"
-      glob: "*.{js,ts,jsx,tsx}"
+      glob: "**/*.{js,ts,jsx,tsx}"
       run: pnpm lint:check && pnpm format:check && pnpm typecheck
 
 pre-push:
