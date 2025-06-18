@@ -79,9 +79,7 @@ describe('TodosService', () => {
 
       mockRepository.save.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.create(createTodoDto)).rejects.toThrow(
-        InternalServerErrorException
-      );
+      await expect(service.create(createTodoDto)).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -166,9 +164,7 @@ describe('TodosService', () => {
     it('should throw InternalServerErrorException when delete fails', async () => {
       mockRepository.delete.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.remove('1')).rejects.toThrow(
-        InternalServerErrorException
-      );
+      await expect(service.remove('1')).rejects.toThrow(InternalServerErrorException);
     });
   });
 });

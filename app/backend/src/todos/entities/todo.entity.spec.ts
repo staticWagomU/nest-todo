@@ -26,7 +26,7 @@ describe('Todo Entity', () => {
     todo.title = 'Test Todo';
     todo.description = 'Test Description';
     todo.completed = false;
-    
+
     expect(todo.id).toBe('test-id');
     expect(todo.title).toBe('Test Todo');
     expect(todo.description).toBe('Test Description');

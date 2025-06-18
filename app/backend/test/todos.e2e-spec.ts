@@ -19,16 +19,18 @@ describe('TodosController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api/v1');
-    
+
     // Add global ValidationPipe to match production configuration
-    app.useGlobalPipes(new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }));
-    
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      })
+    );
+
     todoRepository = moduleFixture.get<Repository<Todo>>(getRepositoryToken(Todo));
-    
+
     await app.init();
   });
 
@@ -59,19 +61,13 @@ describe('TodosController (e2e)', () => {
         description: 'Test Description',
       };
 
-      return request(app.getHttpServer())
-        .post('/api/v1/todos')
-        .send(createTodoDto)
-        .expect(400);
+      return request(app.getHttpServer()).post('/api/v1/todos').send(createTodoDto).expect(400);
     });
   });
 
   describe('/api/v1/todos (GET)', () => {
     it('should return an empty array initially', () => {
-      return request(app.getHttpServer())
-        .get('/api/v1/todos')
-        .expect(200)
-        .expect([]);
+      return request(app.getHttpServer()).get('/api/v1/todos').expect(200).expect([]);
     });
 
     it('should return todos after creating them', async () => {
@@ -140,7 +136,10 @@ describe('TodosController (e2e)', () => {
         .send(updateTodoDto)
         .expect(200)
         .expect((res) => {
-          expect(res.body).toHaveProperty('message', `ユーザーID「${todo.id}」の更新に成功しました。`);
+          expect(res.body).toHaveProperty(
+            'message',
+            `ユーザーID「${todo.id}」の更新に成功しました。`
+          );
         });
     });
   });
@@ -157,7 +156,10 @@ describe('TodosController (e2e)', () => {
         .delete(`/api/v1/todos/${todo.id}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body).toHaveProperty('message', `ユーザーID「${todo.id}」の削除に成功しました。`);
+          expect(res.body).toHaveProperty(
+            'message',
+            `ユーザーID「${todo.id}」の削除に成功しました。`
+          );
         });
     });
   });

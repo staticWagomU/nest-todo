@@ -17,12 +17,14 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('api/v1');
-  
+
   // グローバルValidationPipeを設定
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    })
+  );
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

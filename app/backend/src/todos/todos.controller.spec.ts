@@ -39,7 +39,7 @@ describe('TodosController', () => {
       };
 
       const result = await controller.create(createTodoDto);
-      
+
       expect(mockTodosService.create).toHaveBeenCalledWith(createTodoDto);
       expect(result).toEqual({ message: 'ユーザー登録に成功しました。' });
     });
@@ -62,7 +62,7 @@ describe('TodosController', () => {
 
       const controller = new TodosController(mockTodosService as TodosService);
       const result = await controller.findAll();
-      
+
       expect(mockTodosService.findAll).toHaveBeenCalled();
       expect(result).toBe(todos);
     });
@@ -82,7 +82,7 @@ describe('TodosController', () => {
 
       const controller = new TodosController(mockTodosService as TodosService);
       const result = await controller.findOne('1');
-      
+
       expect(mockTodosService.findOne).toHaveBeenCalledWith('1');
       expect(result).toBe(todo);
     });
@@ -106,7 +106,7 @@ describe('TodosController', () => {
 
       const controller = new TodosController(mockTodosService as TodosService);
       const response = await controller.update('1', updateTodoDto);
-      
+
       expect(mockTodosService.update).toHaveBeenCalledWith('1', updateTodoDto);
       expect(response).toBe(result);
     });
@@ -126,7 +126,7 @@ describe('TodosController', () => {
 
       const controller = new TodosController(mockTodosService as TodosService);
       const response = await controller.remove('1');
-      
+
       expect(mockTodosService.remove).toHaveBeenCalledWith('1');
       expect(response).toBe(result);
     });
