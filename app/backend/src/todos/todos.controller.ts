@@ -8,7 +8,8 @@ import {
   Delete,
   BadRequestException,
 } from '@nestjs/common';
-import type { TodosService } from './todos.service';
+// biome-ignore lint/style/useImportType : nest.jsでエラーが発生するため
+import { TodosService } from './todos.service';
 import type { CreateTodoDto } from './dto/create-todo.dto';
 import type { UpdateTodoDto } from './dto/update-todo.dto';
 
@@ -17,7 +18,7 @@ export class TodosController {
   constructor(private readonly todosService: TodosService) {}
 
   @Post()
-  create(@Body() body: unknown) {
+  create(@Body() body: { title: string; description?: string; completed?: boolean }) {
     // 手動でバリデーション
     if (!body || typeof body !== 'object') {
       throw new BadRequestException('リクエストボディが必要です');
@@ -48,7 +49,10 @@ export class TodosController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: unknown) {
+  update(
+    @Param('id') id: string,
+    @Body() body: { title: string; description?: string; completed?: boolean }
+  ) {
     // 手動でバリデーション
     if (!body || typeof body !== 'object') {
       throw new BadRequestException('リクエストボディが必要です');
