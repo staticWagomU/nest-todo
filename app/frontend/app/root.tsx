@@ -6,7 +6,6 @@ import { SWRConfig } from 'swr';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import TodoPage from './routes/_index/route';
-import { fetcher } from './routes/_index/loader';
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,7 +20,6 @@ export default function App() {
     <MantineProvider>
       <SWRConfig
         value={{
-          fetcher,
           refreshInterval: 0,
           revalidateOnFocus: false,
           revalidateOnReconnect: true,

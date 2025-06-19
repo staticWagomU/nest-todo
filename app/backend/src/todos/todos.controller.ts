@@ -11,8 +11,9 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 // biome-ignore lint/style/useImportType : nest.jsでエラーが発生するため
 import { TodosService } from './todos.service';
-import type { CreateTodoDto } from './dto/create-todo.dto';
-import type { UpdateTodoDto } from './dto/update-todo.dto';
+import { CreateTodoDto } from './dto/create-todo.dto';
+import { UpdateTodoDto } from './dto/update-todo.dto';
+import { Todo } from './entities/todo.entity';
 
 @ApiTags('todos')
 @Controller('todos')
@@ -20,26 +21,11 @@ export class TodosController {
   constructor(private readonly todosService: TodosService) {}
 
   @ApiOperation({ summary: '新しいTODOを作成', description: 'TODOアイテムを新規作成します' })
-  @ApiResponse({ status: 201, description: 'TODOが正常に作成されました' })
+  @ApiBody({ type: CreateTodoDto })
+  @ApiResponse({ status: 201, description: 'TODOが正常に作成されました', type: Todo })
   @ApiResponse({ status: 400, description: '不正なリクエスト' })
   @Post()
-  create(@Body() body: { title: string; description?: string; completed?: boolean }) {
-    // 手動でバリデーション
-    if (!body || typeof body !== 'object') {
-      throw new BadRequestException('リクエストボディが必要です');
-    }
-
-    if (!body.title || typeof body.title !== 'string' || body.title.trim().length < 3) {
-      throw new BadRequestException('タイトルは3文字以上で入力してください');
-    }
-
-    // DTOオブジェクトを手動作成
-    const createTodoDto: CreateTodoDto = {
-      title: body.title.trim(),
-      description: body.description || '',
-      completed: body.completed || false,
-    };
-
+  create(@Body() createTodoDto: CreateTodoDto): Promise<Todo> {
     return this.todosService.create(createTodoDto);
   }
 
@@ -47,9 +33,9 @@ export class TodosController {
     summary: '全てのTODOを取得',
     description: '登録されている全てのTODOアイテムを取得します',
   })
-  @ApiResponse({ status: 200, description: 'TODOリストが正常に取得されました' })
+  @ApiResponse({ status: 200, description: 'TODOリストが正常に取得されました', type: [Todo] })
   @Get()
-  findAll() {
+  findAll(): Promise<Todo[]> {
     return this.todosService.findAll();
   }
 
@@ -57,56 +43,55 @@ export class TodosController {
     summary: '特定のTODOを取得',
     description: 'IDを指定してTODOアイテムを取得します',
   })
-  @ApiParam({ name: 'id', description: 'TODO ID (UUID)' })
-  @ApiResponse({ status: 200, description: 'TODOが正常に取得されました' })
+  @ApiParam({
+    name: 'id',
+    description: 'TODO ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({ status: 200, description: 'TODOが正常に取得されました', type: Todo })
   @ApiResponse({ status: 404, description: '指定されたTODOが見つかりません' })
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string): Promise<Todo> {
     return this.todosService.findOne(id);
   }
 
   @ApiOperation({ summary: 'TODOを更新', description: 'IDを指定してTODOアイテムを部分更新します' })
-  @ApiParam({ name: 'id', description: 'TODO ID (UUID)' })
-  @ApiResponse({ status: 200, description: 'TODOが正常に更新されました' })
+  @ApiParam({
+    name: 'id',
+    description: 'TODO ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({ type: UpdateTodoDto })
+  @ApiResponse({ status: 200, description: 'TODOが正常に更新されました', type: Todo })
   @ApiResponse({ status: 404, description: '指定されたTODOが見つかりません' })
   @ApiResponse({ status: 400, description: '不正なリクエスト' })
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() body: { title: string; description?: string; completed?: boolean }
-  ) {
-    // 手動でバリデーション
-    if (!body || typeof body !== 'object') {
-      throw new BadRequestException('リクエストボディが必要です');
-    }
-
-    // DTOオブジェクトを手動作成
-    const updateTodoDto: UpdateTodoDto = {};
-
-    if (body.title !== undefined) {
-      if (typeof body.title !== 'string' || body.title.trim().length < 3) {
-        throw new BadRequestException('タイトルは3文字以上で入力してください');
-      }
-      updateTodoDto.title = body.title.trim();
-    }
-
-    if (body.description !== undefined) {
-      updateTodoDto.description = body.description;
-    }
-
-    if (body.completed !== undefined) {
-      updateTodoDto.completed = body.completed;
-    }
-
+  update(@Param('id') id: string, @Body() updateTodoDto: UpdateTodoDto): Promise<Todo> {
     return this.todosService.update(id, updateTodoDto);
   }
 
   @ApiOperation({ summary: 'TODOを削除', description: 'IDを指定してTODOアイテムを削除します' })
-  @ApiParam({ name: 'id', description: 'TODO ID (UUID)' })
-  @ApiResponse({ status: 200, description: 'TODOが正常に削除されました' })
+  @ApiParam({
+    name: 'id',
+    description: 'TODO ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'TODOが正常に削除されました',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'ユーザーID「123e4567-e89b-12d3-a456-426614174000」の削除に成功しました。',
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 404, description: '指定されたTODOが見つかりません' })
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.todosService.remove(id);
   }
 }

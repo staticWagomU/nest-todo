@@ -1,5 +1,4 @@
-import { Test, type TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { CreateTodoDto } from './dto/create-todo.dto';
 import type { UpdateTodoDto } from './dto/update-todo.dto';
 import { TodosController } from './todos.controller';

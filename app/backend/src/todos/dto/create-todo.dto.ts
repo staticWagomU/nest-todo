@@ -1,5 +1,4 @@
 import { IsNotEmpty, IsOptional, MinLength, IsString, IsBoolean } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateTodoDto {

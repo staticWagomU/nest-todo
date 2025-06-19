@@ -1,7 +1,4 @@
 import { useState, Suspense } from 'react';
-import useSWR from 'swr';
-import useSWRMutation from 'swr/mutation';
-import * as v from 'valibot';
 import {
   Title,
   Text,
@@ -21,59 +18,32 @@ import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react';
 import {
-  TodoSchema,
-  createTodo,
-  updateTodo,
-  type Todos,
   type Todo,
-  type CreateTodoRequest,
+  type CreateTodoDto,
+  type UpdateTodoDto,
+  useTodosControllerFindAll,
+  useTodosControllerCreate,
+  todosControllerUpdate,
 } from './loader';
 
 export default function TodoPage() {
-  // Custom fetcher with validation for todos
-  const todosFetcher = async (url: string) => {
-    const res = await fetch(url);
+  // Use generated SWR hooks for data fetching
+  const { data: todosResponse, error, isLoading, mutate } = useTodosControllerFindAll();
+  const todos = todosResponse?.data || [];
 
-    if (!res.ok) {
-      throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
-    }
-
-    const data = await res.json();
-
-    // Validate data with Valibot
-    try {
-      return v.parse(TodoSchema, data);
-    } catch (validationError) {
-      throw new Error('Invalid data format received from server');
-    }
-  };
-
-  // SWR for fetching todos with validation
-  const { data: todos = [], error, isLoading, mutate } = useSWR('/api/todos', todosFetcher);
-
-  // SWR Mutations for create and update operations
-  const { trigger: createTodoTrigger, isMutating: isCreating } = useSWRMutation(
-    '/api/todos',
-    async (url: string, { arg }: { arg: CreateTodoRequest }) => {
-      const result = await createTodo(arg);
-      mutate(); // Revalidate todos list
-      return result;
-    }
-  );
-
-  const { trigger: updateTodoTrigger } = useSWRMutation(
-    '/api/todos',
-    async (url: string, { arg }: { arg: { id: string; data: { completed: boolean } } }) => {
-      const result = await updateTodo(arg.id, arg.data);
-      mutate(); // Revalidate todos list
-      return result;
-    }
-  );
+  // Use generated SWR mutation hooks
+  const { trigger: createTodoTrigger, isMutating: isCreating } = useTodosControllerCreate({
+    swr: {
+      onSuccess: () => {
+        mutate(); // Revalidate todos list
+      },
+    },
+  });
 
   const [updatingTodos, setUpdatingTodos] = useState<Set<string>>(new Set());
   const [opened, { open, close }] = useDisclosure(false);
 
-  const form = useForm<CreateTodoRequest>({
+  const form = useForm<CreateTodoDto>({
     mode: 'uncontrolled',
     initialValues: {
       title: '',
@@ -81,11 +51,12 @@ export default function TodoPage() {
       completed: false,
     },
     validate: {
-      title: (value) => (value.trim().length < 3 ? 'タイトルは3文字以上で入力してください' : null),
+      title: (value: string) =>
+        value.trim().length < 3 ? 'タイトルは3文字以上で入力してください' : null,
     },
   });
 
-  const handleSubmit = async (values: CreateTodoRequest) => {
+  const handleSubmit = async (values: CreateTodoDto) => {
     try {
       await createTodoTrigger(values);
       form.reset();
@@ -109,7 +80,8 @@ export default function TodoPage() {
     setUpdatingTodos((prev) => new Set(prev).add(id));
 
     try {
-      await updateTodoTrigger({ id, data: { completed } });
+      await todosControllerUpdate(id, { completed });
+      mutate(); // Revalidate todos list
     } catch (err) {
       // Show error toast
       notifications.show({
