@@ -87,4 +87,13 @@ This is a monorepo containing a full-stack todo application with:
 - **Frontend**: Functional React components with hooks, Valibot for schema validation, Mantine forms
 - **Database**: TypeORM entities with proper column decorators and comments in Japanese
 - **Imports**: External packages first, then relative imports
+- **Service Imports**: In backend `*.controller.ts` files, always use regular imports (not type imports) when importing `*.service.ts` files (type imports cause NestJS errors)
 - **Error Handling**: Proper HTTP status codes and error boundaries
+
+## Post-Task Verification
+
+After completing any code changes, ALWAYS run the following commands from the root directory to ensure code quality:
+```bash
+pnpm lint && pnpm format
+```
+These commands must execute without errors before considering a task complete.
