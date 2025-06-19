@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 // test comment
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -26,6 +27,16 @@ async function bootstrap() {
       transform: true,
     })
   );
+
+  // Swagger設定
+  const config = new DocumentBuilder()
+    .setTitle('Todo API')
+    .setDescription('Todo application API documentation')
+    .setVersion('1.0')
+    .addTag('todos')
+    .build();
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, documentFactory);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
