@@ -1,5 +1,17 @@
 import * as v from 'valibot';
 
+// Global fetcher function for SWR
+export const fetcher = async (url: string) => {
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
+  }
+
+  return await res.json();
+};
+
 export const TodoSchema = v.array(
   v.object({
     id: v.pipe(v.string(), v.uuid()),

@@ -1,4 +1,7 @@
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
+import useSWR from 'swr';
+import useSWRMutation from 'swr/mutation';
+import * as v from 'valibot';
 import {
   Title,
   Text,
@@ -18,7 +21,7 @@ import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react';
 import {
-  fetchTodos,
+  TodoSchema,
   createTodo,
   updateTodo,
   type Todos,
@@ -27,10 +30,46 @@ import {
 } from './loader';
 
 export default function TodoPage() {
-  const [todos, setTodos] = useState<Todos>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  // Custom fetcher with validation for todos
+  const todosFetcher = async (url: string) => {
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
+    }
+
+    const data = await res.json();
+
+    // Validate data with Valibot
+    try {
+      return v.parse(TodoSchema, data);
+    } catch (validationError) {
+      throw new Error('Invalid data format received from server');
+    }
+  };
+
+  // SWR for fetching todos with validation
+  const { data: todos = [], error, isLoading, mutate } = useSWR('/api/todos', todosFetcher);
+
+  // SWR Mutations for create and update operations
+  const { trigger: createTodoTrigger, isMutating: isCreating } = useSWRMutation(
+    '/api/todos',
+    async (url: string, { arg }: { arg: CreateTodoRequest }) => {
+      const result = await createTodo(arg);
+      mutate(); // Revalidate todos list
+      return result;
+    }
+  );
+
+  const { trigger: updateTodoTrigger } = useSWRMutation(
+    '/api/todos',
+    async (url: string, { arg }: { arg: { id: string; data: { completed: boolean } } }) => {
+      const result = await updateTodo(arg.id, arg.data);
+      mutate(); // Revalidate todos list
+      return result;
+    }
+  );
+
   const [updatingTodos, setUpdatingTodos] = useState<Set<string>>(new Set());
   const [opened, { open, close }] = useDisclosure(false);
 
@@ -46,34 +85,22 @@ export default function TodoPage() {
     },
   });
 
-  useEffect(() => {
-    const loadTodos = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchTodos();
-        setTodos(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadTodos();
-  }, []);
-
   const handleSubmit = async (values: CreateTodoRequest) => {
-    setSubmitting(true);
     try {
-      const newTodo = await createTodo(values);
+      await createTodoTrigger(values);
       form.reset();
       close();
-      // Add new todo to existing list instead of refetching all data
-      setTodos((prev) => [...prev, newTodo]);
+      notifications.show({
+        title: '成功',
+        message: 'Todoが作成されました',
+        color: 'green',
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create todo');
-    } finally {
-      setSubmitting(false);
+      notifications.show({
+        title: 'エラー',
+        message: 'Todoの作成に失敗しました',
+        color: 'red',
+      });
     }
   };
 
@@ -82,10 +109,7 @@ export default function TodoPage() {
     setUpdatingTodos((prev) => new Set(prev).add(id));
 
     try {
-      const updatedTodo = await updateTodo(id, { completed });
-
-      // Update the todo in the list
-      setTodos((prev) => prev.map((todo) => (todo.id === id ? updatedTodo : todo)));
+      await updateTodoTrigger({ id, data: { completed } });
     } catch (err) {
       // Show error toast
       notifications.show({
@@ -115,7 +139,7 @@ export default function TodoPage() {
             onClick={open}
             variant="filled"
             color="blue"
-            disabled={loading}
+            disabled={isLoading}
           >
             Todo を追加
           </Button>
@@ -123,11 +147,11 @@ export default function TodoPage() {
 
         {error && (
           <Alert variant="light" color="red" title="Error" icon={<IconAlertCircle />}>
-            {error}
+            {error.message || 'An error occurred'}
           </Alert>
         )}
 
-        {loading ? (
+        {isLoading ? (
           <Group justify="center" py="xl">
             <Loader size="md" />
             <Text>Loading todos...</Text>
@@ -196,10 +220,10 @@ export default function TodoPage() {
               {...form.getInputProps('description')}
             />
             <Group justify="flex-end" gap="sm">
-              <Button variant="default" onClick={close} disabled={submitting}>
+              <Button variant="default" onClick={close} disabled={isCreating}>
                 キャンセル
               </Button>
-              <Button type="submit" loading={submitting} color="blue">
+              <Button type="submit" loading={isCreating} color="blue">
                 追加
               </Button>
             </Group>
