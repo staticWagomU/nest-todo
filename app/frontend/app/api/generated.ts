@@ -107,12 +107,14 @@ export const useTodosControllerCreate = <TError = AxiosError<void>>(options?: {
  * @summary 全てのTODOを取得
  */
 export const todosControllerFindAll = (
+  params?: { order?: 'asc' | 'desc' },
   options?: AxiosRequestConfig
 ): Promise<AxiosResponse<Todo[]>> => {
-  return axios.get('/api/v1/todos', options);
+  return axios.get('/api/v1/todos', { ...options, params: { ...params, ...options?.params } });
 };
 
-export const getTodosControllerFindAllKey = () => ['/api/v1/todos'] as const;
+export const getTodosControllerFindAllKey = (params?: { order?: 'asc' | 'desc' }) =>
+  ['/api/v1/todos', ...(params ? [params] : [])] as const;
 
 export type TodosControllerFindAllQueryResult = NonNullable<
   Awaited<ReturnType<typeof todosControllerFindAll>>
@@ -122,18 +124,22 @@ export type TodosControllerFindAllQueryError = AxiosError<unknown>;
 /**
  * @summary 全てのTODOを取得
  */
-export const useTodosControllerFindAll = <TError = AxiosError<unknown>>(options?: {
-  swr?: SWRConfiguration<Awaited<ReturnType<typeof todosControllerFindAll>>, TError> & {
-    swrKey?: Key;
-    enabled?: boolean;
-  };
-  axios?: AxiosRequestConfig;
-}) => {
+export const useTodosControllerFindAll = <TError = AxiosError<unknown>>(
+  params?: { order?: 'asc' | 'desc' },
+  options?: {
+    swr?: SWRConfiguration<Awaited<ReturnType<typeof todosControllerFindAll>>, TError> & {
+      swrKey?: Key;
+      enabled?: boolean;
+    };
+    axios?: AxiosRequestConfig;
+  }
+) => {
   const { swr: swrOptions, axios: axiosOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
-  const swrKey = swrOptions?.swrKey ?? (() => (isEnabled ? getTodosControllerFindAllKey() : null));
-  const swrFn = () => todosControllerFindAll(axiosOptions);
+  const swrKey =
+    swrOptions?.swrKey ?? (() => (isEnabled ? getTodosControllerFindAllKey(params) : null));
+  const swrFn = () => todosControllerFindAll(params, axiosOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions);
 

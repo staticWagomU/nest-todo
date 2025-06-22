@@ -32,8 +32,10 @@ export class TodosService {
     return newTodo;
   }
 
-  async findAll(): Promise<Todo[]> {
-    return this.todoRepository.find();
+  async findAll(order: 'asc' | 'desc' = 'desc'): Promise<Todo[]> {
+    return this.todoRepository.find({
+      order: { id: order.toUpperCase() as 'ASC' | 'DESC' },
+    });
   }
 
   async findOne(id: string): Promise<Todo> {

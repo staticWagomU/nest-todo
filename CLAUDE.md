@@ -36,6 +36,7 @@ This is a monorepo containing a full-stack todo application with:
 - `pnpm test` - Run unit tests with Vitest
 - `pnpm test:watch` - Run unit tests in watch mode
 - `pnpm test:cov` - Run tests with coverage
+- `pnpm generate-api` - Generate API client from backend OpenAPI spec using Orval
 
 ## Architecture
 
@@ -43,16 +44,17 @@ This is a monorepo containing a full-stack todo application with:
 - **Entry Point**: `src/main.ts` - Bootstrap NestJS app on port 3000 with global prefix `/api/v1`
 - **Database**: PostgreSQL with TypeORM, configured via `DATABASE_URL` environment variable
 - **CORS**: Configured for localhost:5173 (frontend development server)
-- **Todos Module**: Complete CRUD operations for Todo entities
+- **Todos Module**: Complete CRUD operations for Todo entities with sorting functionality
 - **Entity**: `Todo` with UUID primary key, title, description, and completed status
 - **API Endpoints**: RESTful endpoints accessible at `http://localhost:3000/api/v1/todos`
+  - `GET /api/v1/todos?order=asc|desc` - Get all todos with optional sorting by creation order
 - **Validation**: Global ValidationPipe with whitelist and transform enabled
 
 ### Frontend Architecture
 - **Framework**: React 18 with React Router (migrated from Remix)
 - **UI Library**: Mantine UI components with hooks (@mantine/hooks, @mantine/form)
 - **Styling**: Mantine theme system (replaced Tailwind CSS)
-- **Data Fetching**: Custom async functions with Valibot validation
+- **Data Fetching**: SWR hooks with Axios for API communication, Orval-generated client
 - **State Management**: React useState/useEffect for local state
 - **Proxy**: Vite dev server proxies `/api` requests to backend at `localhost:3000/api/v1`
 - **Build Tool**: Vite with React plugin and TypeScript paths
@@ -84,11 +86,20 @@ This is a monorepo containing a full-stack todo application with:
 - **Git Hooks**: Lefthook manages pre-commit (lint/format/typecheck) and pre-push (tests) hooks
 - **TypeScript**: Strict mode enabled across both applications
 - **Backend**: NestJS conventions with decorators, dependency injection, manual validation in controllers
-- **Frontend**: Functional React components with hooks, Valibot for schema validation, Mantine forms
+- **Frontend**: Functional React components with hooks, SWR for data fetching, Mantine forms and UI components
 - **Database**: TypeORM entities with proper column decorators and comments in Japanese
 - **Imports**: External packages first, then relative imports
 - **Service Imports**: In backend `*.controller.ts` files, always use regular imports (not type imports) when importing `*.service.ts` files (type imports cause NestJS errors)
 - **Error Handling**: Proper HTTP status codes and error boundaries
+
+## API Client Generation
+
+The frontend uses Orval to generate TypeScript client code from the backend's OpenAPI specification:
+
+- **Configuration**: `orval.config.js` in the frontend directory
+- **Generated Files**: `app/api/generated.ts` contains all API functions and SWR hooks
+- **Source**: Backend OpenAPI spec at `http://localhost:3000/api/docs-json`
+- **Manual Updates**: If Orval generation fails, API client can be manually updated to match backend changes
 
 ## Post-Task Verification
 

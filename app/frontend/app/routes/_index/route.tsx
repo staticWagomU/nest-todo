@@ -1,4 +1,4 @@
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect, useCallback } from 'react';
 import {
   Title,
   Text,
@@ -12,11 +12,18 @@ import {
   TextInput,
   Textarea,
   Group,
+  SegmentedControl,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { IconAlertCircle, IconPlus } from '@tabler/icons-react';
+import {
+  IconAlertCircle,
+  IconPlus,
+  IconSortAscending,
+  IconSortDescending,
+} from '@tabler/icons-react';
+import { useSearchParams } from 'react-router-dom';
 import {
   type Todo,
   type CreateTodoDto,
@@ -27,8 +34,40 @@ import {
 } from './loader';
 
 export default function TodoPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const orderParam = searchParams.get('order');
+
+  // URLパラメータをlowercaseに変換（DESC → desc, ASC → asc）
+  const normalizeOrder = useCallback((order: string | null): 'asc' | 'desc' => {
+    if (order?.toUpperCase() === 'ASC') return 'asc';
+    if (order?.toUpperCase() === 'DESC') return 'desc';
+    return 'desc'; // デフォルト
+  }, []);
+
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(normalizeOrder(orderParam));
+
+  // 初回ロード時にURLパラメータがない場合はデフォルト値を設定
+  useEffect(() => {
+    if (!orderParam) {
+      setSearchParams({ order: 'DESC' });
+    }
+  }, [orderParam, setSearchParams]);
+
+  // URLパラメータの変更を監視
+  useEffect(() => {
+    const newOrder = normalizeOrder(orderParam);
+    if (newOrder !== sortOrder) {
+      setSortOrder(newOrder);
+    }
+  }, [orderParam, sortOrder, normalizeOrder]);
+
   // Use generated SWR hooks for data fetching
-  const { data: todosResponse, error, isLoading, mutate } = useTodosControllerFindAll();
+  const {
+    data: todosResponse,
+    error,
+    isLoading,
+    mutate,
+  } = useTodosControllerFindAll({ order: sortOrder });
   const todos = todosResponse?.data || [];
 
   // Use generated SWR mutation hooks
@@ -106,15 +145,45 @@ export default function TodoPage() {
       <Stack gap="md">
         <Group justify="space-between" align="center">
           <Title order={1}>Todos</Title>
-          <Button
-            leftSection={<IconPlus size={16} />}
-            onClick={open}
-            variant="filled"
-            color="blue"
-            disabled={isLoading}
-          >
-            Todo を追加
-          </Button>
+          <Group gap="sm">
+            <SegmentedControl
+              value={sortOrder}
+              onChange={(value: string) => {
+                const newOrder = value as 'asc' | 'desc';
+                setSortOrder(newOrder);
+                setSearchParams({ order: newOrder.toUpperCase() });
+              }}
+              data={[
+                {
+                  label: (
+                    <Group gap={4}>
+                      <IconSortAscending size={16} />
+                      <Text size="sm">古い順</Text>
+                    </Group>
+                  ),
+                  value: 'asc',
+                },
+                {
+                  label: (
+                    <Group gap={4}>
+                      <IconSortDescending size={16} />
+                      <Text size="sm">新しい順</Text>
+                    </Group>
+                  ),
+                  value: 'desc',
+                },
+              ]}
+            />
+            <Button
+              leftSection={<IconPlus size={16} />}
+              onClick={open}
+              variant="filled"
+              color="blue"
+              disabled={isLoading}
+            >
+              Todo を追加
+            </Button>
+          </Group>
         </Group>
 
         {error && (

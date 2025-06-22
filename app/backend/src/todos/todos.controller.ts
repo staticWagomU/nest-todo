@@ -1,14 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  BadRequestException,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 // biome-ignore lint/style/useImportType : nest.jsでエラーが発生するため
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -33,10 +24,17 @@ export class TodosController {
     summary: '全てのTODOを取得',
     description: '登録されている全てのTODOアイテムを取得します',
   })
+  @ApiQuery({
+    name: 'order',
+    description: '作成順のソート順序',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'desc',
+  })
   @ApiResponse({ status: 200, description: 'TODOリストが正常に取得されました', type: [Todo] })
   @Get()
-  findAll(): Promise<Todo[]> {
-    return this.todosService.findAll();
+  findAll(@Query('order') order?: 'asc' | 'desc'): Promise<Todo[]> {
+    return this.todosService.findAll(order);
   }
 
   @ApiOperation({
