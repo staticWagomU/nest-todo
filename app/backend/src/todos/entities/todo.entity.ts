@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, BeforeInsert } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { uuidv7 } from 'uuidv7';
 
 @Entity('todos')
 export class Todo {
@@ -7,8 +8,13 @@ export class Todo {
     description: 'TODO の一意識別子',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @PrimaryGeneratedColumn('uuid', { comment: 'ID' })
+  @PrimaryColumn({ comment: 'ID' })
   id: string;
+
+  @BeforeInsert()
+  generateId() {
+    this.id = uuidv7();
+  }
 
   @ApiProperty({
     description: 'TODO のタイトル',
