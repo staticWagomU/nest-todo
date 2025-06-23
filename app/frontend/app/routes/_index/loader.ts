@@ -9,4 +9,6 @@ export {
   todosControllerRemove,
   todosControllerDetachFromParent,
   useTodosControllerFindChildren,
+  useTodosControllerGenerateChildTodos,
+  todosControllerGenerateChildTodos,
 } from '../../api/generated';

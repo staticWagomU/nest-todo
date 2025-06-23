@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { TodosModule } from './todos/todos.module';
 import { Todo } from './todos/entities/todo.entity';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { Todo } from './todos/entities/todo.entity';
       retryDelay: 3000,
     }),
     TodosModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

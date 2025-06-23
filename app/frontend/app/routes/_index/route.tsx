@@ -38,6 +38,8 @@ import {
   todosControllerRemove,
   todosControllerDetachFromParent,
   useTodosControllerFindChildren,
+  useTodosControllerGenerateChildTodos,
+  todosControllerGenerateChildTodos,
 } from './loader';
 
 export default function TodoPage() {
@@ -93,6 +95,7 @@ export default function TodoPage() {
   const [childOpened, { open: openChild, close: closeChild }] = useDisclosure(false);
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [parentTodoForChild, setParentTodoForChild] = useState<Todo | null>(null);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const form = useForm<CreateTodoDto>({
     mode: 'uncontrolled',
@@ -276,6 +279,50 @@ export default function TodoPage() {
         message: 'Todoの切り離しに失敗しました',
         color: 'red',
       });
+    }
+  };
+
+  const handleGenerateChildTodos = async () => {
+    const title = form.getValues().title;
+    const description = form.getValues().description;
+
+    if (!title || title.trim().length < 3) {
+      notifications.show({
+        title: 'エラー',
+        message: 'タイトルを3文字以上で入力してください',
+        color: 'red',
+      });
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      // First create the parent TODO
+      const parentResponse = await createTodoTrigger({
+        title: title.trim(),
+        description: description?.trim() || '',
+        completed: false,
+      });
+
+      // Then generate child TODOs
+      await todosControllerGenerateChildTodos(parentResponse.data.id);
+
+      form.reset();
+      close();
+      mutate(); // Revalidate todos list
+      notifications.show({
+        title: '成功',
+        message: 'TODOとAI子TODOが作成されました',
+        color: 'green',
+      });
+    } catch (err) {
+      notifications.show({
+        title: 'エラー',
+        message: 'AI TODO生成に失敗しました',
+        color: 'red',
+      });
+    } finally {
+      setIsGeneratingAI(false);
     }
   };
 
@@ -503,13 +550,24 @@ export default function TodoPage() {
               key={form.key('description')}
               {...form.getInputProps('description')}
             />
-            <Group justify="flex-end" gap="sm">
-              <Button variant="default" onClick={close} disabled={isCreating}>
-                キャンセル
+            <Group justify="space-between" gap="sm">
+              <Button
+                variant="filled"
+                color="violet"
+                onClick={handleGenerateChildTodos}
+                loading={isGeneratingAI}
+                disabled={isCreating}
+              >
+                AIで追加
               </Button>
-              <Button type="submit" loading={isCreating} color="blue">
-                追加
-              </Button>
+              <Group gap="sm">
+                <Button variant="default" onClick={close} disabled={isCreating || isGeneratingAI}>
+                  キャンセル
+                </Button>
+                <Button type="submit" loading={isCreating} color="blue" disabled={isGeneratingAI}>
+                  追加
+                </Button>
+              </Group>
             </Group>
           </Stack>
         </form>

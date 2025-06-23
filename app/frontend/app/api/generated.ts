@@ -418,3 +418,59 @@ export const useTodosControllerFindChildren = <TError = AxiosError<unknown>>(
     ...query,
   };
 };
+
+/**
+ * 親TODOの情報を基にAIが子TODOを自動生成し、データベースに保存します
+ * @summary AIで子TODOを生成
+ */
+export const todosControllerGenerateChildTodos = (
+  id: string,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<Todo[]>> => {
+  return axios.post(`/api/v1/todos/${id}/generate-children`, {}, options);
+};
+
+export const getTodosControllerGenerateChildTodosMutationFetcher = (
+  id: string,
+  options?: AxiosRequestConfig
+) => {
+  return (_: Key): Promise<AxiosResponse<Todo[]>> => {
+    return todosControllerGenerateChildTodos(id, options);
+  };
+};
+export const getTodosControllerGenerateChildTodosMutationKey = (id: string) =>
+  [`/api/v1/todos/${id}/generate-children`] as const;
+
+export type TodosControllerGenerateChildTodosMutationResult = NonNullable<
+  Awaited<ReturnType<typeof todosControllerGenerateChildTodos>>
+>;
+export type TodosControllerGenerateChildTodosMutationError = AxiosError<void>;
+
+/**
+ * @summary AIで子TODOを生成
+ */
+export const useTodosControllerGenerateChildTodos = <TError = AxiosError<void>>(
+  id: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof todosControllerGenerateChildTodos>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof todosControllerGenerateChildTodos>>
+    > & { swrKey?: string };
+    axios?: AxiosRequestConfig;
+  }
+) => {
+  const { swr: swrOptions, axios: axiosOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getTodosControllerGenerateChildTodosMutationKey(id);
+  const swrFn = getTodosControllerGenerateChildTodosMutationFetcher(id, axiosOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
