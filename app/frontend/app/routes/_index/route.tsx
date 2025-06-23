@@ -31,6 +31,7 @@ import {
   useTodosControllerFindAll,
   useTodosControllerCreate,
   todosControllerUpdate,
+  todosControllerRemove,
 } from './loader';
 
 export default function TodoPage() {
@@ -81,6 +82,8 @@ export default function TodoPage() {
 
   const [updatingTodos, setUpdatingTodos] = useState<Set<string>>(new Set());
   const [opened, { open, close }] = useDisclosure(false);
+  const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false);
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
 
   const form = useForm<CreateTodoDto>({
     mode: 'uncontrolled',
@@ -92,6 +95,19 @@ export default function TodoPage() {
     validate: {
       title: (value: string) =>
         value.trim().length < 3 ? 'タイトルは3文字以上で入力してください' : null,
+    },
+  });
+
+  const editForm = useForm<UpdateTodoDto>({
+    mode: 'uncontrolled',
+    initialValues: {
+      title: '',
+      description: '',
+      completed: false,
+    },
+    validate: {
+      title: (value: string | undefined) =>
+        !value || value.trim().length < 3 ? 'タイトルは3文字以上で入力してください' : null,
     },
   });
 
@@ -136,6 +152,60 @@ export default function TodoPage() {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
+      });
+    }
+  };
+
+  const handleTodoClick = (todo: Todo) => {
+    setSelectedTodo(todo);
+    editForm.setValues({
+      title: todo.title,
+      description: todo.description || '',
+      completed: todo.completed,
+    });
+    openEdit();
+  };
+
+  const handleEditSubmit = async (values: UpdateTodoDto) => {
+    if (!selectedTodo) return;
+
+    try {
+      await todosControllerUpdate(selectedTodo.id, values);
+      mutate(); // Revalidate todos list
+      closeEdit();
+      setSelectedTodo(null);
+      notifications.show({
+        title: '成功',
+        message: 'Todoが更新されました',
+        color: 'green',
+      });
+    } catch (err) {
+      notifications.show({
+        title: 'エラー',
+        message: 'Todoの更新に失敗しました',
+        color: 'red',
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedTodo) return;
+
+    try {
+      await todosControllerRemove(selectedTodo.id);
+      mutate(); // Revalidate todos list
+      closeEdit();
+      setSelectedTodo(null);
+      notifications.show({
+        title: '成功',
+        message: 'Todoが削除されました',
+        color: 'green',
+      });
+    } catch (err) {
+      notifications.show({
+        title: 'エラー',
+        message: 'Todoの削除に失敗しました',
+        color: 'red',
       });
     }
   };
@@ -209,19 +279,36 @@ export default function TodoPage() {
               todos.map((todo: Todo) => {
                 const isUpdating = updatingTodos.has(todo.id);
                 return (
-                  <Card key={todo.id} shadow="sm" padding="md" radius="md" withBorder>
+                  <Card
+                    key={todo.id}
+                    shadow="sm"
+                    padding="md"
+                    radius="md"
+                    withBorder
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => handleTodoClick(todo)}
+                  >
                     <Suspense fallback={<Loader size="sm" />}>
                       <Group>
                         <Checkbox
                           checked={todo.completed}
-                          onChange={(event) =>
-                            handleToggleCompleted(todo.id, event.currentTarget.checked)
-                          }
+                          onChange={(event) => {
+                            event.stopPropagation();
+                            handleToggleCompleted(todo.id, event.currentTarget.checked);
+                          }}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                          }}
                           disabled={isUpdating}
                           label={
                             <Text
                               td={todo.completed ? 'line-through' : 'none'}
                               c={todo.completed ? 'dimmed' : 'inherit'}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleTodoClick(todo);
+                              }}
+                              style={{ cursor: 'pointer' }}
                             >
                               {todo.title}
                             </Text>
@@ -267,6 +354,45 @@ export default function TodoPage() {
               <Button type="submit" loading={isCreating} color="blue">
                 追加
               </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
+
+      <Modal opened={editOpened} onClose={closeEdit} title="Todoを編集" size="md">
+        <form onSubmit={editForm.onSubmit(handleEditSubmit)}>
+          <Stack gap="md">
+            <TextInput
+              label="タイトル"
+              placeholder="Todoのタイトルを入力してください"
+              withAsterisk
+              key={editForm.key('title')}
+              {...editForm.getInputProps('title')}
+            />
+            <Textarea
+              label="説明"
+              placeholder="Todoの説明を入力してください（任意）"
+              rows={3}
+              key={editForm.key('description')}
+              {...editForm.getInputProps('description')}
+            />
+            <Checkbox
+              label="完了済み"
+              key={editForm.key('completed')}
+              {...editForm.getInputProps('completed', { type: 'checkbox' })}
+            />
+            <Group justify="space-between" gap="sm">
+              <Button variant="light" color="red" onClick={handleDelete}>
+                削除
+              </Button>
+              <Group gap="sm">
+                <Button variant="default" onClick={closeEdit}>
+                  キャンセル
+                </Button>
+                <Button type="submit" color="blue">
+                  更新
+                </Button>
+              </Group>
             </Group>
           </Stack>
         </form>

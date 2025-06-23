@@ -6,4 +6,5 @@ export {
   useTodosControllerFindAll,
   useTodosControllerCreate,
   todosControllerUpdate,
+  todosControllerRemove,
 } from '../../api/generated';
