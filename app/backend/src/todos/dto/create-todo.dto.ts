@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, MinLength, IsString, IsBoolean } from 'class-validator';
+import { IsNotEmpty, IsOptional, MinLength, IsString, IsBoolean, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateTodoDto {
@@ -29,4 +29,14 @@ export class CreateTodoDto {
   @IsOptional()
   @IsBoolean()
   completed?: boolean;
+
+  @ApiProperty({
+    description: '親TODO の ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @IsUUID(4, { message: '親TODO の ID は有効な UUID である必要があります' })
+  parentId?: string;
 }

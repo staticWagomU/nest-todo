@@ -22,6 +22,10 @@ import {
   IconPlus,
   IconSortAscending,
   IconSortDescending,
+  IconChevronRight,
+  IconChevronDown,
+  IconTrash,
+  IconUnlink,
 } from '@tabler/icons-react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -32,6 +36,8 @@ import {
   useTodosControllerCreate,
   todosControllerUpdate,
   todosControllerRemove,
+  todosControllerDetachFromParent,
+  useTodosControllerFindChildren,
 } from './loader';
 
 export default function TodoPage() {
@@ -81,9 +87,12 @@ export default function TodoPage() {
   });
 
   const [updatingTodos, setUpdatingTodos] = useState<Set<string>>(new Set());
+  const [expandedTodos, setExpandedTodos] = useState<Set<string>>(new Set());
   const [opened, { open, close }] = useDisclosure(false);
   const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false);
+  const [childOpened, { open: openChild, close: closeChild }] = useDisclosure(false);
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+  const [parentTodoForChild, setParentTodoForChild] = useState<Todo | null>(null);
 
   const form = useForm<CreateTodoDto>({
     mode: 'uncontrolled',
@@ -108,6 +117,19 @@ export default function TodoPage() {
     validate: {
       title: (value: string | undefined) =>
         !value || value.trim().length < 3 ? 'タイトルは3文字以上で入力してください' : null,
+    },
+  });
+
+  const childForm = useForm<CreateTodoDto>({
+    mode: 'uncontrolled',
+    initialValues: {
+      title: '',
+      description: '',
+      completed: false,
+    },
+    validate: {
+      title: (value: string) =>
+        value.trim().length < 3 ? 'タイトルは3文字以上で入力してください' : null,
     },
   });
 
@@ -210,6 +232,184 @@ export default function TodoPage() {
     }
   };
 
+  const handleCreateChild = (parentTodo: Todo) => {
+    setParentTodoForChild(parentTodo);
+    childForm.reset();
+    openChild();
+  };
+
+  const handleChildSubmit = async (values: CreateTodoDto) => {
+    if (!parentTodoForChild) return;
+
+    try {
+      await createTodoTrigger({ ...values, parentId: parentTodoForChild.id });
+      childForm.reset();
+      closeChild();
+      setParentTodoForChild(null);
+      mutate(); // Revalidate todos list
+      notifications.show({
+        title: '成功',
+        message: '子Todoが作成されました',
+        color: 'green',
+      });
+    } catch (err) {
+      notifications.show({
+        title: 'エラー',
+        message: '子Todoの作成に失敗しました',
+        color: 'red',
+      });
+    }
+  };
+
+  const handleDetach = async (todoId: string) => {
+    try {
+      await todosControllerDetachFromParent(todoId);
+      mutate(); // Revalidate todos list
+      notifications.show({
+        title: '成功',
+        message: 'Todoが親から切り離されました',
+        color: 'green',
+      });
+    } catch (err) {
+      notifications.show({
+        title: 'エラー',
+        message: 'Todoの切り離しに失敗しました',
+        color: 'red',
+      });
+    }
+  };
+
+  const toggleExpanded = (todoId: string) => {
+    setExpandedTodos((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(todoId)) {
+        newSet.delete(todoId);
+      } else {
+        newSet.add(todoId);
+      }
+      return newSet;
+    });
+  };
+
+  // Filter to show only parent todos (parentId is null or undefined)
+  const parentTodos = todos.filter((todo: Todo) => !todo.parentId);
+
+  // Function to render a todo with its children
+  const renderTodoItem = (todo: Todo, depth = 0) => {
+    const isUpdating = updatingTodos.has(todo.id);
+    const hasChildren = todo.children && todo.children.length > 0;
+    const isExpanded = expandedTodos.has(todo.id);
+    const isChild = depth > 0;
+
+    return (
+      <div key={todo.id}>
+        <Card
+          shadow="sm"
+          padding="md"
+          radius="md"
+          withBorder
+          style={{
+            cursor: 'pointer',
+            marginLeft: depth * 20,
+            backgroundColor: isChild ? '#f8f9fa' : undefined,
+          }}
+          onClick={() => handleTodoClick(todo)}
+        >
+          <Group>
+            {hasChildren && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleExpanded(todo.id);
+                }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {isExpanded ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
+              </button>
+            )}
+            <Checkbox
+              checked={todo.completed}
+              onChange={(event) => {
+                event.stopPropagation();
+                handleToggleCompleted(todo.id, event.currentTarget.checked);
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+              disabled={isUpdating}
+              label={
+                <Text
+                  td={todo.completed ? 'line-through' : 'none'}
+                  c={todo.completed ? 'dimmed' : 'inherit'}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleTodoClick(todo);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {todo.title}
+                </Text>
+              }
+            />
+            {isUpdating && <Loader size="xs" />}
+
+            {/* Action buttons */}
+            <div style={{ marginLeft: 'auto' }}>
+              <Group gap="xs">
+                {/* 子TODOからは子TODOを作成できない（2階層まで） */}
+                {!isChild && (
+                  <Button
+                    size="xs"
+                    variant="light"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCreateChild(todo);
+                    }}
+                  >
+                    子TODO追加
+                  </Button>
+                )}
+                {isChild && (
+                  <Button
+                    size="xs"
+                    variant="light"
+                    color="orange"
+                    leftSection={<IconUnlink size={12} />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDetach(todo.id);
+                    }}
+                  >
+                    切り離し
+                  </Button>
+                )}
+              </Group>
+            </div>
+          </Group>
+
+          {todo.description && (
+            <Text size="sm" c="dimmed" mt="xs" ml={hasChildren ? 20 : 0}>
+              {todo.description}
+            </Text>
+          )}
+        </Card>
+
+        {/* Render children if expanded */}
+        {hasChildren && isExpanded && (
+          <div>{todo.children?.map((child) => renderTodoItem(child, depth + 1))}</div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <Stack gap="md">
@@ -269,62 +469,18 @@ export default function TodoPage() {
           </Group>
         ) : (
           <Stack gap="sm">
-            {todos.length === 0 ? (
+            {parentTodos.length === 0 ? (
               <Card shadow="sm" padding="md" radius="md" withBorder>
                 <Text ta="center" c="dimmed">
                   まだTodoがありません。新しいTodoを追加してみましょう！
                 </Text>
               </Card>
             ) : (
-              todos.map((todo: Todo) => {
-                const isUpdating = updatingTodos.has(todo.id);
-                return (
-                  <Card
-                    key={todo.id}
-                    shadow="sm"
-                    padding="md"
-                    radius="md"
-                    withBorder
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => handleTodoClick(todo)}
-                  >
-                    <Suspense fallback={<Loader size="sm" />}>
-                      <Group>
-                        <Checkbox
-                          checked={todo.completed}
-                          onChange={(event) => {
-                            event.stopPropagation();
-                            handleToggleCompleted(todo.id, event.currentTarget.checked);
-                          }}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                          }}
-                          disabled={isUpdating}
-                          label={
-                            <Text
-                              td={todo.completed ? 'line-through' : 'none'}
-                              c={todo.completed ? 'dimmed' : 'inherit'}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleTodoClick(todo);
-                              }}
-                              style={{ cursor: 'pointer' }}
-                            >
-                              {todo.title}
-                            </Text>
-                          }
-                        />
-                        {isUpdating && <Loader size="xs" />}
-                      </Group>
-                    </Suspense>
-                    {todo.description && (
-                      <Text size="sm" c="dimmed" mt="xs">
-                        {todo.description}
-                      </Text>
-                    )}
-                  </Card>
-                );
-              })
+              parentTodos.map((todo: Todo) => (
+                <Suspense key={todo.id} fallback={<Loader size="sm" />}>
+                  {renderTodoItem(todo)}
+                </Suspense>
+              ))
             )}
           </Stack>
         )}
@@ -393,6 +549,40 @@ export default function TodoPage() {
                   更新
                 </Button>
               </Group>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
+
+      <Modal
+        opened={childOpened}
+        onClose={closeChild}
+        title={`子Todoを追加: ${parentTodoForChild?.title}`}
+        size="md"
+      >
+        <form onSubmit={childForm.onSubmit(handleChildSubmit)}>
+          <Stack gap="md">
+            <TextInput
+              label="タイトル"
+              placeholder="子Todoのタイトルを入力してください"
+              withAsterisk
+              key={childForm.key('title')}
+              {...childForm.getInputProps('title')}
+            />
+            <Textarea
+              label="説明"
+              placeholder="子Todoの説明を入力してください（任意）"
+              rows={3}
+              key={childForm.key('description')}
+              {...childForm.getInputProps('description')}
+            />
+            <Group justify="flex-end" gap="sm">
+              <Button variant="default" onClick={closeChild} disabled={isCreating}>
+                キャンセル
+              </Button>
+              <Button type="submit" loading={isCreating} color="blue">
+                追加
+              </Button>
             </Group>
           </Stack>
         </form>

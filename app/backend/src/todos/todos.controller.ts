@@ -82,7 +82,7 @@ export class TodosController {
       properties: {
         message: {
           type: 'string',
-          example: 'ユーザーID「123e4567-e89b-12d3-a456-426614174000」の削除に成功しました。',
+          example: 'TODO ID「123e4567-e89b-12d3-a456-426614174000」の削除に成功しました。',
         },
       },
     },
@@ -91,5 +91,37 @@ export class TodosController {
   @Delete(':id')
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.todosService.remove(id);
+  }
+
+  @ApiOperation({
+    summary: '子TODOを親から切り離し',
+    description: '子TODOを親から切り離し、独立したTODOにします',
+  })
+  @ApiParam({
+    name: 'id',
+    description: '子TODO ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({ status: 200, description: '子TODOが正常に切り離されました', type: Todo })
+  @ApiResponse({ status: 404, description: '指定されたTODOが見つかりません' })
+  @ApiResponse({ status: 400, description: 'このTODOは既に親TODOから独立しています' })
+  @Patch(':id/detach')
+  detachFromParent(@Param('id') id: string): Promise<Todo> {
+    return this.todosService.detachFromParent(id);
+  }
+
+  @ApiOperation({
+    summary: '子TODOを取得',
+    description: '指定された親TODOの子TODOを全て取得します',
+  })
+  @ApiParam({
+    name: 'id',
+    description: '親TODO ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({ status: 200, description: '子TODOリストが正常に取得されました', type: [Todo] })
+  @Get(':id/children')
+  findChildren(@Param('id') id: string): Promise<Todo[]> {
+    return this.todosService.findChildrenByParentId(id);
   }
 }

@@ -24,6 +24,8 @@ export interface CreateTodoDto {
   description?: string;
   /** TODO の完了状態 */
   completed?: boolean;
+  /** 親TODO の ID */
+  parentId?: string;
 }
 
 export interface Todo {
@@ -35,6 +37,12 @@ export interface Todo {
   description?: string;
   /** TODO の完了状態 */
   completed: boolean;
+  /** 親TODO の ID */
+  parentId?: string | null;
+  /** 子TODO のリスト */
+  children?: Todo[];
+  /** 親TODO */
+  parent?: Todo | null;
 }
 
 export interface UpdateTodoDto {
@@ -47,6 +55,8 @@ export interface UpdateTodoDto {
   description?: string;
   /** TODO の完了状態 */
   completed?: boolean;
+  /** 親TODO の ID */
+  parentId?: string | null;
 }
 
 export type TodosControllerRemove200 = {
@@ -299,6 +309,109 @@ export const useTodosControllerRemove = <TError = AxiosError<void>>(
   const swrFn = getTodosControllerRemoveMutationFetcher(id, axiosOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+/**
+ * 子TODOを親から切り離し、独立したTODOにします
+ * @summary 子TODOを親から切り離し
+ */
+export const todosControllerDetachFromParent = (
+  id: string,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<Todo>> => {
+  return axios.patch(`/api/v1/todos/${id}/detach`, {}, options);
+};
+
+export const getTodosControllerDetachFromParentMutationFetcher = (
+  id: string,
+  options?: AxiosRequestConfig
+) => {
+  return (_: Key, __: { arg: Arguments }): Promise<AxiosResponse<Todo>> => {
+    return todosControllerDetachFromParent(id, options);
+  };
+};
+export const getTodosControllerDetachFromParentMutationKey = (id: string) =>
+  [`/api/v1/todos/${id}/detach`] as const;
+
+export type TodosControllerDetachFromParentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof todosControllerDetachFromParent>>
+>;
+export type TodosControllerDetachFromParentMutationError = AxiosError<void>;
+
+/**
+ * @summary 子TODOを親から切り離し
+ */
+export const useTodosControllerDetachFromParent = <TError = AxiosError<void>>(
+  id: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof todosControllerDetachFromParent>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof todosControllerDetachFromParent>>
+    > & { swrKey?: string };
+    axios?: AxiosRequestConfig;
+  }
+) => {
+  const { swr: swrOptions, axios: axiosOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getTodosControllerDetachFromParentMutationKey(id);
+  const swrFn = getTodosControllerDetachFromParentMutationFetcher(id, axiosOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+/**
+ * 指定された親TODOの子TODOを全て取得します
+ * @summary 子TODOを取得
+ */
+export const todosControllerFindChildren = (
+  id: string,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<Todo[]>> => {
+  return axios.get(`/api/v1/todos/${id}/children`, options);
+};
+
+export const getTodosControllerFindChildrenKey = (id: string) =>
+  [`/api/v1/todos/${id}/children`] as const;
+
+export type TodosControllerFindChildrenQueryResult = NonNullable<
+  Awaited<ReturnType<typeof todosControllerFindChildren>>
+>;
+export type TodosControllerFindChildrenQueryError = AxiosError<unknown>;
+
+/**
+ * @summary 子TODOを取得
+ */
+export const useTodosControllerFindChildren = <TError = AxiosError<unknown>>(
+  id: string,
+  options?: {
+    swr?: SWRConfiguration<Awaited<ReturnType<typeof todosControllerFindChildren>>, TError> & {
+      swrKey?: Key;
+      enabled?: boolean;
+    };
+    axios?: AxiosRequestConfig;
+  }
+) => {
+  const { swr: swrOptions, axios: axiosOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!id;
+  const swrKey =
+    swrOptions?.swrKey ?? (() => (isEnabled ? getTodosControllerFindChildrenKey(id) : null));
+  const swrFn = () => todosControllerFindChildren(id, axiosOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions);
 
   return {
     swrKey,

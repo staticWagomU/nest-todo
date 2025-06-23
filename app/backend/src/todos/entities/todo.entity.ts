@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryColumn, BeforeInsert } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryColumn,
+  BeforeInsert,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { uuidv7 } from 'uuidv7';
 
@@ -37,4 +45,26 @@ export class Todo {
   })
   @Column('boolean', { comment: 'Todoの完了状態', nullable: false, default: false })
   completed: boolean;
+
+  @ApiProperty({
+    description: '親TODO の ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @Column('varchar', { comment: '親TODO の ID', nullable: true })
+  parentId: string | null;
+
+  @ManyToOne(
+    () => Todo,
+    (todo) => todo.children,
+    { nullable: true }
+  )
+  @JoinColumn({ name: 'parentId' })
+  parent: Todo | null;
+
+  @OneToMany(
+    () => Todo,
+    (todo) => todo.parent
+  )
+  children: Todo[];
 }
