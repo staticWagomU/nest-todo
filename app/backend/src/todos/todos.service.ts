@@ -9,7 +9,7 @@ import type { UpdateTodoDto } from './dto/update-todo.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Todo } from './entities/todo.entity';
 import type { Repository } from 'typeorm';
-import { randomUUID } from 'node:crypto';
+import { uuidv7 } from 'uuidv7';
 
 @Injectable()
 export class TodosService {
@@ -39,7 +39,7 @@ export class TodosService {
 
     const newTodo = await this.todoRepository
       .save({
-        id: randomUUID({ disableEntropyCache: true }),
+        id: uuidv7(),
         title: createTodoDto.title,
         description: createTodoDto.description || '',
         completed: createTodoDto.completed || false,
