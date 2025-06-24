@@ -93,9 +93,11 @@ export default function TodoPage() {
   const [opened, { open, close }] = useDisclosure(false);
   const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false);
   const [childOpened, { open: openChild, close: closeChild }] = useDisclosure(false);
+  const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [parentTodoForChild, setParentTodoForChild] = useState<Todo | null>(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
 
   const form = useForm<CreateTodoDto>({
     mode: 'uncontrolled',
@@ -213,13 +215,21 @@ export default function TodoPage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
     if (!selectedTodo) return;
+    setTodoToDelete(selectedTodo);
+    closeEdit();
+    openDelete();
+  };
+
+  const handleDelete = async (cascadeDelete = false) => {
+    if (!todoToDelete) return;
 
     try {
-      await todosControllerRemove(selectedTodo.id);
+      await todosControllerRemove(todoToDelete.id, { cascadeDelete });
       mutate(); // Revalidate todos list
-      closeEdit();
+      closeDelete();
+      setTodoToDelete(null);
       setSelectedTodo(null);
       notifications.show({
         title: '成功',
@@ -596,7 +606,7 @@ export default function TodoPage() {
               {...editForm.getInputProps('completed', { type: 'checkbox' })}
             />
             <Group justify="space-between" gap="sm">
-              <Button variant="light" color="red" onClick={handleDelete}>
+              <Button variant="light" color="red" onClick={handleDeleteClick}>
                 削除
               </Button>
               <Group gap="sm">
@@ -644,6 +654,49 @@ export default function TodoPage() {
             </Group>
           </Stack>
         </form>
+      </Modal>
+
+      <Modal opened={deleteOpened} onClose={closeDelete} title="削除の確認" size="md">
+        <Stack gap="md">
+          <Text>「{todoToDelete?.title}」を削除しますか？</Text>
+
+          {todoToDelete?.children && todoToDelete.children.length > 0 && (
+            <>
+              <Alert color="orange" title="子TODOが存在します">
+                この親TODOには {todoToDelete.children.length} 個の子TODOがあります。
+                どのように処理しますか？
+              </Alert>
+
+              <Text size="sm" c="dimmed">
+                • 「子TODOを切り離す」: 子TODOは残り、親から独立したTODOになります
+              </Text>
+              <Text size="sm" c="dimmed">
+                • 「子TODOも削除する」: 親TODOと一緒に子TODOも全て削除されます
+              </Text>
+            </>
+          )}
+
+          <Group justify="flex-end" gap="sm">
+            <Button variant="default" onClick={closeDelete}>
+              キャンセル
+            </Button>
+
+            {todoToDelete?.children && todoToDelete.children.length > 0 ? (
+              <>
+                <Button color="orange" onClick={() => handleDelete(false)}>
+                  子TODOを切り離す
+                </Button>
+                <Button color="red" onClick={() => handleDelete(true)}>
+                  子TODOも削除する
+                </Button>
+              </>
+            ) : (
+              <Button color="red" onClick={() => handleDelete(false)}>
+                削除
+              </Button>
+            )}
+          </Group>
+        </Stack>
       </Modal>
     </>
   );

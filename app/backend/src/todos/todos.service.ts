@@ -102,15 +102,45 @@ export class TodosService {
     return this.findOne(id);
   }
 
-  async remove(id: string) {
+  async remove(id: string, cascadeDelete = false) {
+    // 削除対象のTODOを取得
+    const todoToDelete = await this.todoRepository.findOne({
+      where: { id },
+      relations: ['children'],
+    });
+
+    if (!todoToDelete) {
+      throw new NotFoundException(`TODO ID「${id}」が見つかりません。`);
+    }
+
+    // 子TODOが存在する場合の処理
+    if (todoToDelete.children && todoToDelete.children.length > 0) {
+      if (cascadeDelete) {
+        // 子TODOも一緒に削除（cascade delete）
+        for (const child of todoToDelete.children) {
+          await this.todoRepository.delete(child.id);
+        }
+      } else {
+        // 子TODOを親から切り離す（orphan化）
+        await this.todoRepository.update({ parentId: id }, { parentId: null });
+      }
+    }
+
+    // TODOを削除
     await this.todoRepository.delete(id).catch((error) => {
       throw new InternalServerErrorException(
         `[${error.message}]TODO ID「${id}」の削除に失敗しました。`
       );
     });
 
+    const childAction = cascadeDelete ? '子TODOも一緒に削除されました' : '子TODOは切り離されました';
+    const message =
+      todoToDelete.children && todoToDelete.children.length > 0
+        ? `TODO ID「${id}」の削除に成功しました。${childAction}。`
+        : `TODO ID「${id}」の削除に成功しました。`;
+
     return {
-      message: `TODO ID「${id}」の削除に成功しました。`,
+      message,
     };
   }
 

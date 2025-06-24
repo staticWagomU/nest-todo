@@ -89,6 +89,13 @@ export class TodosController {
     description: 'TODO ID (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
+  @ApiQuery({
+    name: 'cascadeDelete',
+    description: '子TODOも一緒に削除するかどうか',
+    required: false,
+    type: Boolean,
+    example: false,
+  })
   @ApiResponse({
     status: 200,
     description: 'TODOが正常に削除されました',
@@ -104,8 +111,11 @@ export class TodosController {
   })
   @ApiResponse({ status: 404, description: '指定されたTODOが見つかりません' })
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<{ message: string }> {
-    return this.todosService.remove(id);
+  remove(
+    @Param('id') id: string,
+    @Query('cascadeDelete') cascadeDelete?: boolean
+  ): Promise<{ message: string }> {
+    return this.todosService.remove(id, cascadeDelete || false);
   }
 
   @ApiOperation({

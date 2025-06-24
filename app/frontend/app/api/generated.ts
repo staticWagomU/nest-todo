@@ -267,17 +267,19 @@ export const useTodosControllerUpdate = <TError = AxiosError<void>>(
  */
 export const todosControllerRemove = (
   id: string,
+  params?: { cascadeDelete?: boolean },
   options?: AxiosRequestConfig
 ): Promise<AxiosResponse<TodosControllerRemove200>> => {
-  return axios.delete(`/api/v1/todos/${id}`, options);
+  return axios.delete(`/api/v1/todos/${id}`, { ...options, params });
 };
 
 export const getTodosControllerRemoveMutationFetcher = (
   id: string,
+  params?: { cascadeDelete?: boolean },
   options?: AxiosRequestConfig
 ) => {
   return (_: Key, __: { arg: Arguments }): Promise<AxiosResponse<TodosControllerRemove200>> => {
-    return todosControllerRemove(id, options);
+    return todosControllerRemove(id, params, options);
   };
 };
 export const getTodosControllerRemoveMutationKey = (id: string) => [`/api/v1/todos/${id}`] as const;
