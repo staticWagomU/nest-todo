@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Todo } from './entities/todo.entity';
 import type { Repository } from 'typeorm';
 import { uuidv7 } from 'uuidv7';
+import { extractDateFromUuidv7 } from '../utils/uuid.utils';
 
 @Injectable()
 export class TodosService {
@@ -17,6 +18,33 @@ export class TodosService {
     @InjectRepository(Todo)
     private readonly todoRepository: Repository<Todo>
   ) {}
+
+  /**
+   * TodoオブジェクトにcreatedAtを追加する
+   * @param todo Todoオブジェクト
+   * @returns createdAtが追加されたTodoオブジェクト
+   */
+  private addCreatedAt(todo: Todo): Todo {
+    return {
+      ...todo,
+      createdAt: extractDateFromUuidv7(todo.id),
+      generateId: todo.generateId,
+    };
+  }
+
+  /**
+   * Todo配列の各要素にcreatedAtを追加する
+   * @param todos Todo配列
+   * @returns createdAtが追加されたTodo配列
+   */
+  private addCreatedAtToArray(todos: Todo[]): Todo[] {
+    return todos.map(todo => ({
+      ...todo,
+      createdAt: extractDateFromUuidv7(todo.id),
+      generateId: todo.generateId,
+      children: todo.children ? this.addCreatedAtToArray(todo.children) : undefined,
+    }));
+  }
 
   /**
    * 登録
@@ -49,21 +77,29 @@ export class TodosService {
         throw new InternalServerErrorException(`[${error.message}]TODO登録に失敗しました。`);
       });
 
-    return newTodo;
+    const todoWithRelations = await this.findOne(newTodo.id);
+    return todoWithRelations;
   }
 
   async findAll(order: 'asc' | 'desc' = 'desc'): Promise<Todo[]> {
-    return this.todoRepository.find({
+    const todos = await this.todoRepository.find({
       relations: ['children', 'parent'],
       order: { id: order.toUpperCase() as 'ASC' | 'DESC' },
     });
+    return this.addCreatedAtToArray(todos);
   }
 
   async findOne(id: string): Promise<Todo> {
-    return this.todoRepository.findOneOrFail({
+    const todo = await this.todoRepository.findOneOrFail({
       where: { id },
       relations: ['children', 'parent'],
     });
+    return {
+      ...todo,
+      createdAt: extractDateFromUuidv7(todo.id),
+      generateId: todo.generateId,
+      children: todo.children ? this.addCreatedAtToArray(todo.children) : undefined,
+    };
   }
 
   async update(id: string, updateTodoDto: UpdateTodoDto): Promise<Todo> {
@@ -171,10 +207,11 @@ export class TodosService {
    * @param parentId 親TODO ID
    */
   async findChildrenByParentId(parentId: string): Promise<Todo[]> {
-    return this.todoRepository.find({
+    const todos = await this.todoRepository.find({
       where: { parentId },
       relations: ['children'],
       order: { id: 'DESC' },
     });
+    return this.addCreatedAtToArray(todos);
   }
 }

@@ -255,6 +255,7 @@ export default function TodoPage() {
     if (!parentTodoForChild) return;
 
     try {
+      console.log('Creating child todo:', { ...values, parentId: parentTodoForChild.id });
       await createTodoTrigger({ ...values, parentId: parentTodoForChild.id });
       childForm.reset();
       closeChild();
@@ -266,6 +267,7 @@ export default function TodoPage() {
         color: 'green',
       });
     } catch (err) {
+      console.error('Error creating child todo:', err);
       notifications.show({
         title: 'エラー',
         message: '子Todoの作成に失敗しました',
@@ -455,6 +457,12 @@ export default function TodoPage() {
           {todo.description && (
             <Text size="sm" c="dimmed" mt="xs" ml={hasChildren ? 20 : 0}>
               {todo.description}
+            </Text>
+          )}
+
+          {todo.createdAt && (
+            <Text size="xs" c="dimmed" mt="xs" ml={hasChildren ? 20 : 0}>
+              作成日時: {new Date(todo.createdAt).toLocaleString('ja-JP')}
             </Text>
           )}
         </Card>

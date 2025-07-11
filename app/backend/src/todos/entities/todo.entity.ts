@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { uuidv7 } from 'uuidv7';
+import { extractDateFromUuidv7 } from '../../utils/uuid.utils';
 
 @Entity('todos')
 export class Todo {
@@ -67,4 +68,12 @@ export class Todo {
     (todo) => todo.parent
   )
   children: Todo[];
+
+  @ApiProperty({
+    description: 'TODO の作成日時',
+    example: '2024-06-24T10:30:00.000Z',
+  })
+  get createdAt(): Date {
+    return extractDateFromUuidv7(this.id);
+  }
 }

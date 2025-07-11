@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
 import type { CreateTodoDto } from './dto/create-todo.dto';
 import type { UpdateTodoDto } from './dto/update-todo.dto';

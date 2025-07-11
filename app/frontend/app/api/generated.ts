@@ -43,6 +43,8 @@ export interface Todo {
   children?: Todo[];
   /** 親TODO */
   parent?: Todo | null;
+  /** TODO の作成日時 */
+  createdAt?: string;
 }
 
 export interface UpdateTodoDto {
