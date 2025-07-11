@@ -38,7 +38,7 @@ export class TodosService {
    * @returns createdAtが追加されたTodo配列
    */
   private addCreatedAtToArray(todos: Todo[]): Todo[] {
-    return todos.map(todo => ({
+    return todos.map((todo) => ({
       ...todo,
       createdAt: extractDateFromUuidv7(todo.id),
       generateId: todo.generateId,
