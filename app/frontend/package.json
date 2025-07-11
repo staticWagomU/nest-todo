@@ -15,7 +15,9 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:cov": "vitest --coverage",
-    "generate-api": "orval --config ./orval.config.js"
+    "generate-api": "orval --config ./orval.config.js",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@mantine/core": "^7.17.6",
@@ -32,6 +34,12 @@
     "valibot": "1.0.0-beta.10"
   },
   "devDependencies": {
+    "@storybook/addon-essentials": "^8.6.0",
+    "@storybook/addon-interactions": "^8.6.0",
+    "@storybook/blocks": "^8.6.0",
+    "@storybook/react": "^8.6.0",
+    "@storybook/react-vite": "^8.6.0",
+    "@storybook/test": "^8.6.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^18.2.20",
@@ -42,6 +50,7 @@
     "jsdom": "^25.0.0",
     "orval": "^7.10.0",
     "postcss": "^8.4.38",
+    "storybook": "^8.6.0",
     "typescript": "^5.1.6",
     "vite": "^5.1.0",
     "vite-tsconfig-paths": "^4.2.1",
