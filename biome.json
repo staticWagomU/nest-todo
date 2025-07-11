@@ -29,6 +29,6 @@
   },
   "files": {
     "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json"],
-    "ignore": ["node_modules", "dist", "build", ".next", ".vite", "coverage"]
+    "ignore": ["node_modules", "dist", "build", ".next", ".vite", "coverage", "storybook-static"]
   }
 }
